@@ -7,6 +7,8 @@ on:
 jobs:
   check-tasks-and-close-issue:
     runs-on: ubuntu-latest
+    permissions: 
+      issues: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,11 +22,11 @@ jobs:
           GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
           
           # GitHub API를 사용하여 이슈의 내용 가져오기
-          BODY=$(curl -s \
+          BODY=$(curl -L \
                  -H "Authorization: Bearer $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" | jq -r '.body')
-
+                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER")
+                 
           echo "Issue #$ISSUE_NUMBER content:"
           echo "$BODY"
           
