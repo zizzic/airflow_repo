@@ -1,0 +1,31 @@
+name: Auto Close Issue on Task Completion
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  auto-close-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check for task list
+        id: task-check
+        run: |
+          if echo "${{ github.event.issue.body }}" | grep -q "\- \[ \]"; then
+            echo "::set-output name=has_tasks::true"
+          else
+            echo "::set-output name=has_tasks::false"
+          fi
+
+      - name: Auto close issue if all tasks are completed
+        if: steps.task-check.outputs.has_tasks == 'true' && contains(github.event.issue.body, "- [x]") && !contains(github.event.issue.body, "- [ ]")
+        uses: peter-evans/close-issue@v1
+        with:
+          comment: "모든 태스크가 완료되어 이슈를 자동으로 닫습니다!"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
