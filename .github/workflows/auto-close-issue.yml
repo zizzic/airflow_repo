@@ -24,6 +24,9 @@ jobs:
             echo "All tasks are completed. Closing issue."
             echo "Issue Number: ${{ github.event.issue.number }}"
             echo "Issue Body: ${{ github.event.issue.body }}"
+            echo "goal : https://github.com/zizzic/main_repo/issues/28"
+            echo "https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}"
+            
             gh issue close https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}
             
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
