@@ -16,6 +16,7 @@ jobs:
       - name: Check if all tasks are completed and close issue
         id: check-tasks
         run: |
+          echo ${{ github.workspace }}
           ISSUE_BODY="${{ github.event.issue.body }}"
           CHECKBOX_TOTAL=$(echo "$ISSUE_BODY" | grep -o "\- \[\( \)\|\(x\)\]" | wc -l)
           CHECKBOX_COMPLETED=$(echo "$ISSUE_BODY" | grep -o "\- \[x\]" | wc -l)
@@ -26,7 +27,7 @@ jobs:
             echo "Issue Body: ${{ github.event.issue.body }}"
             echo "goal : https://github.com/zizzic/main_repo/issues/28"
             echo "https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}"
-            
+            echo ${{ github.workspace }}
             gh issue close https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}
             
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
