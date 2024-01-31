@@ -28,7 +28,7 @@ jobs:
             echo "goal : https://github.com/zizzic/main_repo/issues/28"
             echo "https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}"
             echo ${{ github.workspace }}
-            gh issue close "https://github.com/zizzic/main_repo/issues/#${{ github.event.issue.number }}"
+            gh issue close "#${{ github.event.issue.number }}"
             
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
             echo "No tasks found. Skipping."
