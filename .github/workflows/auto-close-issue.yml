@@ -21,6 +21,8 @@ jobs:
 
           if [ "$CHECKBOX_TOTAL" -ne "0" ] && [ "$CHECKBOX_TOTAL" -eq "$CHECKBOX_COMPLETED" ]; then
             echo "All tasks are completed. Closing issue."
+            echo "Issue Number: ${{ github.event.issue.number }}"
+            echo "Issue Body: ${{ github.event.issue.body }}"
             gh issue close ${{ github.event.issue.number }}
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
             echo "No tasks found. Skipping."
