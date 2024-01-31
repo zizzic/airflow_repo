@@ -12,7 +12,7 @@ jobs:
         uses: actions/github-script@v5
         with:
           script: |
-            const issueBody = context.payload.issue.body;
+            const issueBody = context.payload.issue.body || ''; // issueBody가 null이면 빈 문자열로 설정
             // GitHub 이슈 URL을 찾는 정규 표현식
             const regex = /https:\/\/github\.com\/([^\/]+)\/([^\/]+)\/issues\/(\d+)/;
             const found = issueBody.match(regex);
