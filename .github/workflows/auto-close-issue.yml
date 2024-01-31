@@ -38,12 +38,19 @@ jobs:
 
           # 모든 작업이 완료되었는지 확인
           if [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ] && [ "$TOTAL_TASKS" -ne "0" ]; then
-            # API를 사용하여 이슈를 닫음
-            curl -s -X PATCH \
-                 -H "Authorization: Bearer $GITHUB_TOKEN" \
-                 -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
-                 -d '{"state":"closed"}'
+          name: Close Issue
+          uses: peter-evans/close-issue@v3
+          with:
+            comment: |
+              Issue title must start with 'ABC-'.
+              Auto-closing this issue.
+            
+            # # API를 사용하여 이슈를 닫음
+            # curl -s -X PATCH \
+            #      -H "Authorization: Bearer $GITHUB_TOKEN" \
+            #      -H "Accept: application/vnd.github.v3+json" \
+            #      "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
+            #      -d '{"state":"closed"}'
 
             sleep 5  # GitHub API가 상태 변경을 반영하는 데 시간이 필요할 수 있음
 
