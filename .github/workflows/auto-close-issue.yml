@@ -37,6 +37,19 @@ jobs:
                  -H "Accept: application/vnd.github.v3+json" \
                  "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
                  -d '{"state":"closed"}'
+
+            sleep 5  # GitHub API가 상태 변경을 반영하는 데 시간이 필요할 수 있음
+
+          # 이슈의 최신 상태 가져오기
+            ISSUE_STATE=$(curl -s \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" | jq -r '.state')
+
+          # 이슈 상태 출력
+            echo "Issue #$ISSUE_NUMBER is now $ISSUE_STATE."
           fi
+          
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
