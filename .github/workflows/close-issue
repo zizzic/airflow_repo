@@ -1,5 +1,5 @@
 - name: Close issue
-  uses: close-issue@v1
+  uses: peter-evans/close-issue@v1
   with:
     issue-number: ${{ github.event.issue.number }}
     token: ${{ secrets.GITHUB_TOKEN }}
