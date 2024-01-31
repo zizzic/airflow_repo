@@ -1,8 +1,6 @@
 name: Auto Close Issue when all tasks are completed
 
 on:
-  issue_comment:
-    types: [created, edited]
   issues:
     types: [opened, edited]
 
@@ -21,16 +19,24 @@ jobs:
           REPO="${{ github.repository }}"
           GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
           
-          # API를 사용하여 이슈를 닫음
+          # GitHub API를 사용하여 이슈의 내용 가져오기
+          BODY=$(curl -s \
+                 -H "Authorization: Bearer $GITHUB_TOKEN" \
+                 -H "Accept: application/vnd.github.v3+json" \
+                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" | jq -r '.body')
+          
+          # 체크리스트 항목 확인
+          TOTAL_TASKS=$(echo "$BODY" | grep -o -E '\- \[ \]' | wc -l)
+          COMPLETED_TASKS=$(echo "$BODY" | grep -o -E '\- \[x\]' | wc -l)
 
-          curl -L -X PATCH \
-               -H "Accept: application/vnd.github.v3+json" \
-               -H "Authorization: Bearer $GITHUB_TOKEN" \
-               -H "X-GitHub-Api-Version: 2022-11-28" \
-               "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
-               -d '{"state":"closed"}'
-
+          # 모든 작업이 완료되었는지 확인
+          if [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ] && [ "$TOTAL_TASKS" -ne "0" ]; then
+            # API를 사용하여 이슈를 닫음
+            curl -s -X PATCH \
+                 -H "Authorization: Bearer $GITHUB_TOKEN" \
+                 -H "Accept: application/vnd.github.v3+json" \
+                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
+                 -d '{"state":"closed"}'
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
