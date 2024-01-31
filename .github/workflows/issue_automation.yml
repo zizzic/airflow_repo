@@ -2,23 +2,27 @@ name: Issue Automation
 
 on:
   issues:
-    types: [opened]
-
+    types: [opened, edited]
 jobs:
-  create-task-issue:
+  convert-tasklist-to-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Create Task Issue
+      - name: Convert Tasklist to Issue
         uses: actions/github-script@v5
         with:
           script: |
-            const milestone = context.payload.issue.milestone;
-            const description = context.payload.issue.body;
-            // Task 생성 로직 추가
-            const newIssue = await github.rest.issues.create({
+            const issue_number = context.issue.number;
+            const github_token = process.env.GITHUB_TOKEN;
+            const octokit = github.getOctokit(github_token);
+
+            const issue = await octokit.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'New Task Issue Title',
-              body: description, // 원본 이슈의 설명 사용
-              milestone: milestone ? milestone.number : null, // 원본 이슈의 마일스톤 사용
+              issue_number: issue_number,
             });
+
+            const body = issue.data.body;
+            const milestone = issue.data.milestone;
+
+            // Tasklist 항목을 찾아 새 이슈로 변환하는 로직 작성
+            // 예: - [ ] Task 1 -> 새 이슈 생성
