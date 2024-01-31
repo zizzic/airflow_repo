@@ -24,7 +24,12 @@ jobs:
             echo "All tasks are completed. Closing issue."
             echo "Issue Number: ${{ github.event.issue.number }}"
             echo "Issue Body: ${{ github.event.issue.body }}"
-            gh issue close "#${{ github.event.issue.number }}"
+            - name: Close issue
+              uses: peter-evans/close-issue@v1
+            with:
+              issue-number: ${{ github.event.issue.number }}
+              token: ${{ secrets.GITHUB_TOKEN }    
+              
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
             echo "No tasks found. Skipping."
           else
