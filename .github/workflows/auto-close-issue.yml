@@ -16,25 +16,17 @@ jobs:
       - name: Check if all tasks are completed and close issue
         id: check-tasks
         run: |
-          echo ${{ github.workspace }}
-          ISSUE_BODY="${{ github.event.issue.body }}"
-          CHECKBOX_TOTAL=$(echo "$ISSUE_BODY" | grep -o "\- \[\( \)\|\(x\)\]" | wc -l)
-          CHECKBOX_COMPLETED=$(echo "$ISSUE_BODY" | grep -o "\- \[x\]" | wc -l)
-
-          if [ "$CHECKBOX_TOTAL" -ne "0" ] && [ "$CHECKBOX_TOTAL" -eq "$CHECKBOX_COMPLETED" ]; then
-            echo "All tasks are completed. Closing issue."
-            echo "Issue Number: ${{ github.event.issue.number }}"
-            echo "Issue Body: ${{ github.event.issue.body }}"
-            echo "goal : https://github.com/zizzic/main_repo/issues/28"
-            echo "https://github.com/zizzic/main_repo/issues/${{ github.event.issue.number }}"
-            echo ${{ github.workspace }}
-            gh issue close "#${{ github.event.issue.number }}"
-            
-          elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
-            echo "No tasks found. Skipping."
-          else
-            echo "Not all tasks are completed. Skipping."
-          fi
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.repository }}"
+          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          
+          # API를 사용하여 이슈를 닫음
+          curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
+               -d '{"state":"closed"}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
