@@ -5,8 +5,6 @@ on:
     types: [created, edited]
   issues:
     types: [opened, edited]
-permissions:
-  issues: write  # 이슈에 쓰기 권한 부여
 
 jobs:
   check-tasks-and-close-issue:
