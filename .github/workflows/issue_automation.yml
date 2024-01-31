@@ -1,0 +1,24 @@
+name: Issue Automation
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  create-task-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Task Issue
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const milestone = context.payload.issue.milestone;
+            const description = context.payload.issue.body;
+            // Task 생성 로직 추가
+            const newIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'New Task Issue Title',
+              body: description, // 원본 이슈의 설명 사용
+              milestone: milestone ? milestone.number : null, // 원본 이슈의 마일스톤 사용
+            });
