@@ -8,6 +8,8 @@ jobs:
   check-tasks-and-close-issue:
     runs-on: ubuntu-latest
     permissions: 
+      contents: read
+      packages: write
       issues: write
     steps:
       - name: Checkout code
