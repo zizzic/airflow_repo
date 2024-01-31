@@ -22,8 +22,9 @@ jobs:
           GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
           
           # API를 사용하여 이슈를 닫음
-          curl -X PATCH -H "Authorization: token $GITHUB_TOKEN" \
+          curl -X PATCH 
                -H "Accept: application/vnd.github.v3+json" \
+               -H "Authorization: Bearer $GITHUB_TOKEN" \
                "https://api.github.com/repos/zizzic/main_repo/issues/$ISSUE_NUMBER" \
                -d '{"state":"closed"}'
         env:
