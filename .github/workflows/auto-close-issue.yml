@@ -12,6 +12,14 @@ jobs:
       packages: write
       issues: write
     steps:
+      - name: Close Issue
+        uses: peter-evans/close-issue@v3
+        with:
+            comment: |
+              Issue title must start with 'ABC-'.
+              Auto-closing this issue.
+
+    
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -38,12 +46,7 @@ jobs:
 
           # 모든 작업이 완료되었는지 확인
           if [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ] && [ "$TOTAL_TASKS" -ne "0" ]; then
-          name: Close Issue
-          uses: peter-evans/close-issue@v3
-          with:
-            comment: |
-              Issue title must start with 'ABC-'.
-              Auto-closing this issue.
+    
             
             # # API를 사용하여 이슈를 닫음
             # curl -s -X PATCH \
