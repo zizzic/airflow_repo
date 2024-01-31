@@ -24,6 +24,9 @@ jobs:
                  -H "Authorization: Bearer $GITHUB_TOKEN" \
                  -H "Accept: application/vnd.github.v3+json" \
                  "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" | jq -r '.body')
+
+          echo "Issue #$ISSUE_NUMBER content:"
+          echo "$BODY"
           
           # 체크리스트 항목 확인
           TOTAL_TASKS=$(echo "$BODY" | grep -o -E '\- \[ \]' | wc -l)
