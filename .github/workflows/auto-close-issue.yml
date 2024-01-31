@@ -15,6 +15,7 @@ jobs:
       - name: Close Issue
         uses: peter-evans/close-issue@v3
         with:
+            issue-number: ${{ github.event.issue.number }}
             comment: |
               Issue title must start with 'ABC-'.
               Auto-closing this issue.
