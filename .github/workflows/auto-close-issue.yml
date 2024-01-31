@@ -24,7 +24,8 @@ jobs:
             echo "All tasks are completed. Closing issue."
             echo "Issue Number: ${{ github.event.issue.number }}"
             echo "Issue Body: ${{ github.event.issue.body }}"
-            echo "::set-output name=should_close::true"
+            gh issue close ${{ github.event.issue.number }}
+            
           elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
             echo "No tasks found. Skipping."
           else
@@ -33,10 +34,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 이 부분은 별도의 스텝으로 추가합니다.
-      - name: Close issue
-        if: steps.check-tasks.outputs.should_close == 'true'
-        uses: peter-evans/close-issue@v1
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          token: ${{ secrets.GITHUB_TOKEN }}
