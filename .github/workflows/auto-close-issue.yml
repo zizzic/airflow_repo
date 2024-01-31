@@ -5,9 +5,7 @@ on:
     types: [created, edited]
   issues:
     types: [opened, edited]
-    
-permissions:
-  issues: write
+
 
 jobs:
   check-tasks-and-close-issue:
