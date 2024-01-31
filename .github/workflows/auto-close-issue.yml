@@ -12,62 +12,37 @@ jobs:
       packages: write
       issues: write
     steps:
-      - name: Close Issue
-        uses: peter-evans/close-issue@v3
-        with:
-            issue-number: ${{ github.event.issue.number }}
-            comment: |
-              Issue title must start with 'ABC-'.
-              Auto-closing this issue.
-
-    
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Check if all tasks are completed and close issue
-        id: check-tasks
-        run: |
-          ISSUE_NUMBER="${{ github.event.issue.number }}"
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.repository }}"
-          GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          
-          # GitHub API를 사용하여 이슈의 내용 가져오기
-          BODY=$(curl -L \
-                 -H "Authorization: Bearer $GITHUB_TOKEN" \
-                 -H "Accept: application/vnd.github.v3+json" \
-                 "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER")
-                 
-          echo "Issue #$ISSUE_NUMBER content:"
-          echo "$BODY"
-          
-          # 체크리스트 항목 확인
-          TOTAL_TASKS=$(echo "$BODY" | grep -o -E '\- \[ \]' | wc -l)
-          COMPLETED_TASKS=$(echo "$BODY" | grep -o -E '\- \[x\]' | wc -l)
-
-          # 모든 작업이 완료되었는지 확인
-          if [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ] && [ "$TOTAL_TASKS" -ne "0" ]; then
-    
-            
-            # # API를 사용하여 이슈를 닫음
-            # curl -s -X PATCH \
-            #      -H "Authorization: Bearer $GITHUB_TOKEN" \
-            #      -H "Accept: application/vnd.github.v3+json" \
-            #      "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" \
-            #      -d '{"state":"closed"}'
-
-            sleep 5  # GitHub API가 상태 변경을 반영하는 데 시간이 필요할 수 있음
-
-          # 이슈의 최신 상태 가져오기
-            ISSUE_STATE=$(curl -s \
-                -H "Authorization: Bearer $GITHUB_TOKEN" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/$OWNER/$REPO/issues/$ISSUE_NUMBER" | jq -r '.state')
-
-          # 이슈 상태 출력
-            echo "Issue #$ISSUE_NUMBER is now $ISSUE_STATE."
-          fi
-          
-
+      # 이슈 
+      - name: Check for Tasklist in Issue Description
+        id: check-tasklist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # 이슈 본문 가져오기
+          ISSUE_BODY=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER" | jq -r '.body')
+
+          # Tasklist 항목 확인
+          TOTAL_TASKS=$(echo "$ISSUE_BODY" | grep -o -E '\- \[ \]' | wc -l)
+          COMPLETED_TASKS=$(echo "$ISSUE_BODY" | grep -o -E '\- \[x\]' | wc -l)
+
+          # Tasklist가 있고 모든 항목이 완료된 경우
+          if [ "$TOTAL_TASKS" -gt 0 ] && [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ]; then
+            echo "All tasks in the issue description are completed."
+            echo "::set-output name=all_tasks_completed::true"
+          else
+            echo "Not all tasks in the issue description are completed or no tasks found."
+            echo "::set-output name=all_tasks_completed::false"
+          fi
+      
+    
+      - name: Close Issue
+        if: steps.check-tasklist.outputs.all_tasks_completed == 'true'
+        uses: peter-evans/close-issue@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.issue.number }}
+          comment: "Auto-closing this issue because all tasks have been completed."
