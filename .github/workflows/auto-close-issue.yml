@@ -1,13 +1,13 @@
 name: Auto Close Issue when all tasks are completed
 
-permissions:
-  issues: write
-
 on:
   issue_comment:
     types: [created, edited]
   issues:
     types: [opened, edited]
+    
+permissions:
+  issues: write
 
 jobs:
   check-tasks-and-close-issue:
