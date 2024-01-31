@@ -30,17 +30,18 @@ jobs:
           echo "---------------------------------------------"
           
           # Tasklist 항목 확인
-          TOTAL_TASKS=$(echo "$ISSUE_BODY" | grep -o -E '\- \[ \]' | wc -l)
+          TOTAL_TASKS=$(echo "$ISSUE_BODY" | grep -o -E '\- \[[ x]\]' | wc -l)
           COMPLETED_TASKS=$(echo "$ISSUE_BODY" | grep -o -E '\- \[x\]' | wc -l)
 
           # Tasklist가 있고 모든 항목이 완료된 경우
-          if [ "$TOTAL_TASKS" -gt 0 ] && [ "$TOTAL_TASKS" == "$COMPLETED_TASKS" ]; then
+          if [ "$TOTAL_TASKS" -gt 0 ] && [ "$TOTAL_TASKS" -eq "$COMPLETED_TASKS" ]; then
             echo "All tasks in the issue description are completed."
             echo "::set-output name=all_tasks_completed::true"
           else
             echo "Not all tasks in the issue description are completed or no tasks found."
             echo "::set-output name=all_tasks_completed::false"
           fi
+
       
     
       - name: Close Issue
