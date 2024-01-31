@@ -1,31 +1,31 @@
-name: Auto Close Issue on Task Completion
+name: Auto Close Issue when all tasks are completed
 
 on:
-  issues:
-    types: [opened, edited]
   issue_comment:
     types: [created, edited]
+  issues:
+    types: [opened, edited]
 
 jobs:
-  auto-close-issue:
+  check-tasks-and-close-issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Check for task list
-        id: task-check
+      - name: Check if all tasks are completed and close issue
         run: |
-          if echo "${{ github.event.issue.body }}" | grep -q "\- \[ \]"; then
-            echo "::set-output name=has_tasks::true"
-          else
-            echo "::set-output name=has_tasks::false"
-          fi
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          CHECKBOX_TOTAL=$(echo "$ISSUE_BODY" | grep -o "\- \[\( \)\|\(x\)\]" | wc -l)
+          CHECKBOX_COMPLETED=$(echo "$ISSUE_BODY" | grep -o "\- \[x\]" | wc -l)
 
-      - name: Auto close issue if all tasks are completed
-        if: steps.task-check.outputs.has_tasks == 'true' && contains(github.event.issue.body, '- \[x\]') && !contains(github.event.issue.body, '- \[ \]')
-        uses: peter-evans/close-issue@v1
-        with:
-          comment: "모든 태스크가 완료되어 이슈를 자동으로 닫습니다!"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          issue-number: ${{ github.event.issue.number }}
+          if [ "$CHECKBOX_TOTAL" -ne "0" ] && [ "$CHECKBOX_TOTAL" -eq "$CHECKBOX_COMPLETED" ]; then
+            echo "All tasks are completed. Closing issue."
+            gh issue close ${{ github.event.issue.number }}
+          elif [ "$CHECKBOX_TOTAL" -eq "0" ]; then
+            echo "No tasks found. Skipping."
+          else
+            echo "Not all tasks are completed. Skipping."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
