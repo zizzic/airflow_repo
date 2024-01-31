@@ -23,7 +23,7 @@ jobs:
           fi
 
       - name: Auto close issue if all tasks are completed
-        if: steps.task-check.outputs.has_tasks == 'true' && contains(github.event.issue.body, "- [x]") && !contains(github.event.issue.body, "- [ ]")
+        if: steps.task-check.outputs.has_tasks == 'true' && contains(github.event.issue.body, '- \[x\]') && !contains(github.event.issue.body, '- \[ \]')
         uses: peter-evans/close-issue@v1
         with:
           comment: "모든 태스크가 완료되어 이슈를 자동으로 닫습니다!"
