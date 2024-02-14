@@ -3,7 +3,7 @@
 
 # airflow
 logs/
-
+certs/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
