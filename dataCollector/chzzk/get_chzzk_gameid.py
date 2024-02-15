@@ -34,6 +34,7 @@ for game in game_list:
         game_name = span_element.text
         chzzk_game_tags.append(game_name)
     else:
+        chzzk_game_tags.append("")
         pass
 driver.quit()
 
