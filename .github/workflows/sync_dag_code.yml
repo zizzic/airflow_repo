@@ -13,7 +13,6 @@ permissions:
 jobs:
     path-filter:
         runs-on: ubuntu-latest
-
         outputs:
             dags-changed: ${{ steps.filter.outputs.dags }}
             docker-changed: ${{ steps.filter.outputs.docker }}
