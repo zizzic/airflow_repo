@@ -6,12 +6,11 @@ on:
     pull_request:
         branches: develop
 
-permissions:
-    contents: read
-
 jobs:
     path-filter:
         runs-on: ubuntu-latest
+        permissions:
+            pull-requests: read
         outputs:
             dags-changed: ${{ steps.filter.outputs.dags }}
             docker-changed: ${{ steps.filter.outputs.docker }}
