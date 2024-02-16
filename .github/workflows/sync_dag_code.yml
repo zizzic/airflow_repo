@@ -86,7 +86,7 @@ jobs:
 
             - name: Git Sync
               env:
-                  DEPLOY_DIRECTORY: ${{ env.REPO_NAME }}
+                  DEPLOY_DIRECTORY: ~/${{ env.REPO_NAME }}
               run: |
                   cd $DEPLOY_DIRECTORY
 
@@ -98,7 +98,7 @@ jobs:
             - name: Restart Docker Services
               if: ${{ needs.path-filter.outputs.docker-changed == 'true' }}
               env:
-                  DEPLOY_DIRECTORY: ${{ env.REPO_NAME }}
+                  DEPLOY_DIRECTORY: ~/${{ env.REPO_NAME }}
               run: |
                   cd $DEPLOY_DIRECTORY
 
