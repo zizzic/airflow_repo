@@ -28,8 +28,6 @@ for id in streamer_id:
         df.loc[len(df)] = status
 
     else:
-        # make dummy data
-        status = [id, timestamp, "", "", 0]
-        df.loc[len(df)] = status
+        pass
 
 

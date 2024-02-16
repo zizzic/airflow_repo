@@ -33,10 +33,8 @@ def get_chzzk_data(context):
             df.loc[len(df)] = status
 
         else:
-            # make dummy data
-            status = [id, timestamp, "", "", 0]
-            df.loc[len(df)] = status
-        df.to_csv("./chzzk_data.csv",encoding='utf-8')
+            pass
+    return df
 
 
 # dag codes
