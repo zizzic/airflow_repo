@@ -1,36 +1,33 @@
 import requests
+import pandas as pd
+import json
+from datetime import datetime
 
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
+# df_structure
+df = pd.DataFrame(columns=["STREAMER_ID", "LIVE_COLLECT_TIME_STAMP","VIDEO_TITLE", "GAME_CODE", "VIEWER_NUM"])
+
+# get streamer_id in redis
+streamer_id = ['0b33823ac81de48d5b78a38cdbc0ab94']
+
+for id in streamer_id:
+    # get response
+    res = requests.get(f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status")
+    live_data = res.json()
+
+    # check live_status
+    live=live_data["content"]["status"]
+    timestamp = datetime.now()  # context("data_interval_end")
+
+    if live == "OPEN":
+        # status["STREAMER_ID","LIVE_COLLECT_TIME_STAMP","VIDEO_TITLE","GAME_CODE","VIEWER_NUM"]
+        video_title = live_data["content"]["liveTitle"]
+        game_code = live_data["content"]["liveCategoryValue"] #KR name
+        viewer_num = int(live_data["content"]["concurrentUserCount"])
+
+        status = [id,timestamp,video_title,game_code,viewer_num]
+        df.loc[len(df)] = status
+
+    else:
+        pass
 
 
-channel_id = ['1a1dd9ce56fb61a37ffb6f69f6d5b978'] # 강퀴
-
-# chzzk_url = 'https://chzzk.naver.com/live/'
-# IF LIVE STREAM IS TRUE
-# CHECK LIVE STREAM - plz code input iter-code
-# res=requests.get(f'https://api.chzzk.naver.com/service/v1/channels/{streamer_uid[0]}')
-# print(check_live)
-res = requests.get(f"https://api.chzzk.naver.com/polling/v2/channels/{channel_id[0]}/live-status")
-check_live = res.json()
-print(check_live)
-
-# Crawling functions that operate asynchronously
-# streaming data
-# - viewers' participation: current_view_count, accumulated_views,
-# - broadcast time and cycle: broadcast_time
-# - viewer's change: broadcast_title, timestamp
-# - game info: game_info
-
-
-# async def chzzk_main():
-#     driver = webdriver.Chrome()
-#     driver.get("http://www.python.org")
-#     assert "Python" in driver.title
-#     elem = driver.find_element(By.NAME, "q")
-#     elem.clear()
-#     elem.send_keys("pycon")
-#     elem.send_keys(Keys.RETURN)
-#     assert "No results found." not in driver.page_source
-#     driver.close()
