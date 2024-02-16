@@ -58,17 +58,17 @@ jobs:
             - name: Install Flake8
               run: pip install flake8
             - name: Run Flake8
-              run: flake8 . --max-line-length=120 || true
+              run: flake8 dags/ tests/dags --max-line-length=120 || true
 
             - name: Install Pylint
               run: pip install pylint
             - name: Run Pylint
-              run: find . -name "*.py" | xargs pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104
+              run: find dags/ tests/dags/ -name "*.py" | xargs pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104
 
             - name: Install Black
               run: pip install black
             - name: Run Black
-              run: find . -name "*.py" | xargs black --check
+              run: find dags/ tests/dags/ -name "*.py" | xargs black --check
               continue-on-error: true
 
             - name: Test DAG integrity
