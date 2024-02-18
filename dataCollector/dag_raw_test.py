@@ -35,10 +35,10 @@ def chzzk_raw(**kwargs):
                 live_stream_data[id] = live_data
         else:
             pass
-    answer = {'chzzk': live_stream_data}
-    print(answer)
-    with open('./live_stream_data.json', 'r+') as f:
-        json.dump(answer, f, indent=4)
+
+    
+    with open('./live_stream_data_chzzk.json', 'w') as f:
+        json.dump(live_stream_data, f, indent=4)
 
 
 def afreeca_raw(**kwargs):
@@ -83,29 +83,32 @@ def afreeca_raw(**kwargs):
             else:
                 pass
 
-    answer = {'afreeca':live_stream_data}
+    with open('./live_stream_data_afreeca.json', 'w') as f:
+        json.dump(live_stream_data, f, indent=4)
+    
 
-    # 파일 읽기
+def merge_json():
+    # 파일 읽고 기존 데이터 로드
     try:
-        with open('./live_stream_data.json', 'r') as f:
-            data = json.load(f)  # 파일에서 기존 데이터 로드
+        with open('./live_stream_data_chzzk.json', 'r') as f:
+            chzzk_data = json.load(f)  
     except FileNotFoundError:
-        data = {}  # 파일이 없으면 빈 딕셔너리 사용
-    print(data)
-    # answer 딕셔너리를 기존 data 딕셔너리에 추가/업데이트
-    data.update(answer)
+        chzzk_data = {}
+
+    try:
+        with open('./live_stream_data_afreeca.json', 'r') as f:
+            afreeca_data = json.load(f) 
+    except FileNotFoundError:
+        afreeca_data = {}
 
     # 'stream_data'라는 최상위 키로 전체 데이터를 감싸는 새로운 딕셔너리 생성
-    stream_data = {'stream_data': data}
+    stream_data = {'stream_data': {
+        'chzzk':chzzk_data,
+        'afreeca':afreeca_data,
+    }}
 
-    # 변경된 전체 데이터를 JSON 파일에 저장
     with open('./live_stream_data.json', 'w') as f:
         json.dump(stream_data, f, indent=4)
-
-## test data
-#
-# data_dict = {"apple": 0.5, "milk": 2.5, "bread": 4.0}
-# data_json = json.dumps(data_dict)
 
 bucket_name = "de-2-1-bucket"
 
@@ -136,6 +139,11 @@ with DAG(
         python_callable=afreeca_raw
     )
 
+    task_merge_json = PythonOperator(
+        task_id='merge_json_task',
+        python_callable=merge_json
+    )
+
     # load
     current_time = '{{ data_interval_end}}'
     year = "{{ data_interval_end.year }}"
@@ -159,7 +167,7 @@ with DAG(
         except json.JSONDecodeError:
             # 파일이 비어있거나 JSON 형식이 아닐 경우 빈 객체 사용
             data_json = {}
-
+    data_json = json.dumps(data_json)
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=bucket_name,
@@ -168,5 +176,5 @@ with DAG(
         replace=True,
         aws_conn_id="aws_conn_id",
     )
-task_get_s_list >> task_raw_chzzk >> task_raw_afreeca >> task_load_raw_data
+task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
 
