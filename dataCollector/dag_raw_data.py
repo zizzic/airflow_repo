@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 import time
 import json
 from datetime import datetime,timedelta
@@ -10,14 +11,43 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup as bs
 
-# get streamer_list in elasticcache
-def get_s_list():
-    # test streamer_list
-    return ["0d027498b18371674fac3ed17247e6b8", "fe558c6d1b8ef3206ac0bc0419f3f564",
-            "0b33823ac81de48d5b78a38cdbc0ab94"]
 
-def chzzk_raw(chzzk_ids):
+# get streamer_list in rds
+def get_s_list():
+    # RDS 연결 설정
+    return [["0d027498b18371674fac3ed17247e6b8", "fe558c6d1b8ef3206ac0bc0419f3f564",
+            "0b33823ac81de48d5b78a38cdbc0ab94"],[""]]
+    # pg_hook = PostgresHook(postgres_conn_id='my_rds_postgres')
+    #
+    # # 데이터베이스에서 데이터 가져오기
+    # sql = "SELECT * FROM STREAMER_INFO;"  # 적절한 SQL 쿼리로 대체
+    # connection = pg_hook.get_conn()
+    # cursor = connection.cursor()
+    # cursor.execute(sql)
+    # results = cursor.fetchall()
+    #
+    #
+    # # streamer 분리 및 저장
+    # chzzk = []
+    # afreeca = []
+    # for row in results:
+    #     if row[1]:
+    #         chzzk.append(row[0], row[1]) #streamer_nm,chz_id
+    #     if row[2]:
+    #         afreeca.append(row[0], row[2]) #streamer_nm,af_id
+    #
+    # cursor.close()
+    # connection.close()
+
+    #
+
+def chzzk_raw(**kwargs):
+    ti = kwargs['ti']
+    lists = ti.xcom_pull(task_ids='get_s_list')
+    chzzk, afreeca = lists
+    chzzk_ids = chzzk
     live_stream_data = {}
+
     for id in chzzk_ids:
         res = requests.get(f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status")
 
@@ -28,9 +58,17 @@ def chzzk_raw(chzzk_ids):
                 live_stream_data[id] = live_data
         else:
             pass
-    return live_stream_data
+    answer = {'chzzk': live_stream_data}
+    with open('./live_stream_data.json', 'w') as f:
+        json.dump(answer, f, indent=4)
 
-def afreeca_raw(afreeca_ids):
+
+def afreeca_raw(**kwargs):
+    ti = kwargs['ti']
+    lists = ti.xcom_pull(task_ids='get_s_list')
+    chzzk, afreeca = lists
+
+    afreeca_ids = afreeca
     live_stream_data = {}
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -66,13 +104,25 @@ def afreeca_raw(afreeca_ids):
         else:
             pass
 
-    return live_stream_data
+    answer = {'afreeca':live_stream_data}
+    try:
+        with open('/live_stream_data.json', 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {}
+
+    data.update(answer)
+
+    with open('/live_stream_data.json', 'w') as f:
+        data = json.load(f)
+        json.dump(answer, f, indent=4)
+
 
 
 ## test data
-
-data_dict = {"apple": 0.5, "milk": 2.5, "bread": 4.0}
-data_json = json.dumps(data_dict)
+#
+# data_dict = {"apple": 0.5, "milk": 2.5, "bread": 4.0}
+# data_json = json.dumps(data_dict)
 
 bucket_name = "de-2-1-bucket"
 
@@ -109,6 +159,13 @@ with DAG(
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
     table_name = 'raw_live_viewer'
+
+    try:
+        with open('/live_stream_data.json', 'r') as f:
+            data_json = json.load(f)
+    except FileNotFoundError:
+        data_json = {}
+
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=bucket_name,
@@ -117,5 +174,5 @@ with DAG(
         replace=True,
         aws_conn_id="aws_conn_id",
     )
-task_get_s_list > [task_raw_chzzk,task_raw_afreeca] > task_load_raw_data
+task_get_s_list >> [task_raw_chzzk,task_raw_afreeca] >> task_load_raw_data
 
