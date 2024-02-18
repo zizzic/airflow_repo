@@ -1,8 +1,9 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
-
+from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 import time
+import json
 from datetime import datetime,timedelta
 
 import requests
@@ -68,6 +69,13 @@ def afreeca_raw(afreeca_ids):
     return live_stream_data
 
 
+## test data
+
+data_dict = {"apple": 0.5, "milk": 2.5, "bread": 4.0}
+data_json = json.dumps(data_dict)
+
+bucket_name = "de-2-1-bucket"
+
 # dag codes
 with DAG(
     'get_raw_data',
@@ -81,7 +89,7 @@ with DAG(
     schedule_interval="*/5 * * * *",
     catchup=False,
 )as dag:
-
+    
     task_get_s_list = PythonOperator(
         task_id='get_s_list',
         python_callable=get_s_list
@@ -96,7 +104,18 @@ with DAG(
     )
 
     # load
-    task_load_raw_data = DummyOperator(task_id='load')
-
+    current_time = '{{ data_interval_end}}'
+    year = "{{ data_interval_end.year }}"
+    month = "{{ data_interval_end.month }}"
+    day = "{{ data_interval_end.day }}"
+    table_name = 'raw_live_viewer'
+    task_load_raw_data = S3CreateObjectOperator(
+        task_id="create_object",
+        s3_bucket=bucket_name,
+        s3_key=f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
+        data=data_json,
+        replace=True,
+        aws_conn_id="aws_conn_id",
+    )
 task_get_s_list > [task_raw_chzzk,task_raw_afreeca] > task_load_raw_data
 
