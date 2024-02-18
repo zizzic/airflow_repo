@@ -12,7 +12,7 @@ bucket_name = "de-2-1-bucket"
 
 # test & load to s3 template
 with DAG(
-    "get_raw_data",
+    "load_to_s3",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
