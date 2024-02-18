@@ -34,6 +34,7 @@ def get_chzzk_data(context):
 
         else:
             pass
+
     return df
 
 

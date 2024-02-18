@@ -2,25 +2,40 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-import time
+from airflow.providers.mysql.operators.mysql import MySqlOperator
+
 import json
 import os
+import requests
 from datetime import datetime,timedelta
 
-import requests
-import pandas as pd
-from bs4 import BeautifulSoup as bs
-
-
 # get streamer_list in rds
-def get_s_list():
+def get_s_list(**kwargs):
     # RDS 연결 설정
-    ti = [["fe558c6d1b8ef3206ac0bc0419f3f564","0b33823ac81de48d5b78a38cdbc0ab94"],["devil0108"]]
-    return ti
+    ti = kwargs['ti']
+    data = ti.xcom_pull(task_ids="get_data_using_query")
+
+    return data
+
+def process_data(**kwargs):
+    ti = kwargs['ti']
+    # XCom에서 SQL 쿼리 결과 가져오기
+    sql_data = ti.xcom_pull(task_ids='get_s_list_task')
+    chzzk = []
+    afc = []
+    for row in sql_data:
+        if row[1] != '':
+            chzzk.append(row[1])
+        if row[2] != '':
+            afc.append(row[2])
+    # 가공된 데이터 반환
+    return [chzzk, afc]
+
 
 def chzzk_raw(**kwargs):
     ti = kwargs['ti']
-    lists = ti.xcom_pull(task_ids='get_s_list_task')
+    lists = ti.xcom_pull(task_ids='processing_task')
+    print(lists)
     chzzk, afreeca = lists
     chzzk_ids = chzzk
     live_stream_data = {}
@@ -43,7 +58,7 @@ def chzzk_raw(**kwargs):
 
 def afreeca_raw(**kwargs):
     ti = kwargs['ti']
-    lists = ti.xcom_pull(task_ids='get_s_list_task')
+    lists = ti.xcom_pull(task_ids='processing_task')
     chzzk, afreeca = lists
 
     afreeca_ids = afreeca
@@ -126,9 +141,14 @@ with DAG(
     catchup=False,
 )as dag:
     
-    task_get_s_list = PythonOperator(
-        task_id='get_s_list_task',
-        python_callable=get_s_list
+    task_get_s_list = MySqlOperator(
+        task_id="get_s_list_task",
+        sql='select STREAMER_ID,CHZ_ID,AFC_ID from STREAMER_INFO;',
+        mysql_conn_id="aws_rds_conn_id"
+    )
+    task_processing_list = PythonOperator(
+        task_id='processing_task',
+        python_callable= process_data
     )
     task_raw_chzzk = PythonOperator(
         task_id='chzzk_raw_task',
@@ -176,5 +196,5 @@ with DAG(
         replace=True,
         aws_conn_id="aws_conn_id",
     )
-task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
+task_get_s_list >> task_processing_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
 
