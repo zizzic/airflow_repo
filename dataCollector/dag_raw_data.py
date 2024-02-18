@@ -1,8 +1,9 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
 
 import time
-from datetime import datetime
+from datetime import datetime,timedelta
 
 import requests
 import pandas as pd
@@ -69,22 +70,33 @@ def afreeca_raw(afreeca_ids):
 
 # dag codes
 with DAG(
-'get_raw_data',
-    default_args={},
+    'get_raw_data',
+    default_args={
+        'owner': 'airflow',
+        'depends_on_past': False,
+        'start_date': datetime(2024,2,18),
+        'retries':1,
+        'retry_delay': timedelta(minutes=5),
+    },
+    schedule_interval="*/5 * * * *",
     catchup=False,
 )as dag:
 
-    get_raw_chzzk = PythonOperator(
+    task_get_s_list = PythonOperator(
+        task_id='get_s_list',
+        python_callable=get_s_list
+    )
+    task_raw_chzzk = PythonOperator(
         task_id='chzzk_raw',
         python_callable=chzzk_raw
     )
-    get_raw_afreeca = PythonOperator(
+    task_raw_afreeca = PythonOperator(
         task_id='afreeca_raw',
         python_callable=afreeca_raw
     )
 
     # load
-    load_raw_data = dummyOperator()
+    task_load_raw_data = DummyOperator(task_id='load')
 
-get_s_list > [get_raw_chzzk,get_raw_afreeca] > load_raw_data
+task_get_s_list > [task_raw_chzzk,task_raw_afreeca] > task_load_raw_data
 
