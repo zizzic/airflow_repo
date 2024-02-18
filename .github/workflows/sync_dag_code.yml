@@ -1,4 +1,4 @@
-name: Example CI/CD Workflow
+name: CI/CD Workflow
 
 on:
     push:
@@ -33,7 +33,7 @@ jobs:
 
     build:
         needs: path-filter
-        if: needs.path-filter.outputs.dags-changed == 'true'
+        if: needs.path-filter.outputs.dags-changed == 'true' && github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -75,7 +75,8 @@ jobs:
               run: pytest tests/
 
     deploy:
-        needs: [path-filter, build]
+        needs: path-filter
+        if: github.event_name == 'push'
         runs-on: self-hosted
         steps:
             - name: Checkout code
@@ -89,7 +90,6 @@ jobs:
                   DEPLOY_DIRECTORY: /home/zizzicteam2/${{ env.REPO_NAME }}
               run: |
                   rsync -av --include='dags/***' --include='docker-compose.yaml' --include='Dockerfile' --exclude='*' ./ $DEPLOY_DIRECTORY
-                  echo $DEPLOY_DIRECTORY
             - name: Restart Docker Services
               if: ${{ needs.path-filter.outputs.docker-changed == 'true' }}
               env:
