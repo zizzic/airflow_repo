@@ -3,6 +3,7 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.providers.mysql.hooks.mysql import MySqlHook
 
 import json
 import os
@@ -12,12 +13,12 @@ from datetime import datetime,timedelta
 # get streamer_list in rds
 def get_s_list(**kwargs):
     # RDS 연결 설정
-    ti = kwargs['ti']
-    data = ti.xcom_pull(task_ids="get_data_using_query")
-
+    mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
+    result = mysql_hook.get_records("SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;")
+    # kwargs['ti'].xcom_push(key='query_result', value=result)
     chzzk = []
     afc = []
-    for row in data:
+    for row in result:
         if row[1] != '':
             chzzk.append(row[1])
         if row[2] != '':
@@ -128,14 +129,9 @@ with DAG(
     catchup=False,
 )as dag:
     
-    task_get_s_list = MySqlOperator(
+    task_get_s_list = PythonOperator(
         task_id="get_s_list_task",
-        sql='select STREAMER_ID,CHZ_ID,AFC_ID from STREAMER_INFO;',
-        mysql_conn_id="aws_rds_conn_id"
-    )
-    task_processing_list = PythonOperator(
-        task_id='processing_task',
-        python_callable= process_data
+        python_callable=get_s_list
     )
     task_raw_chzzk = PythonOperator(
         task_id='chzzk_raw_task',
