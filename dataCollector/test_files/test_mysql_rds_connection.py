@@ -8,9 +8,10 @@ import logging
 
 
 def retrieve_data(**kwargs):
-    ti= kwargs['ti']
-    data=ti.xcom_pull(task_ids="get_data_using_query")
+    ti = kwargs["ti"]
+    data = ti.xcom_pull(task_ids="get_data_using_query")
     return data
+
 
 # test & load to s3 template
 with DAG(
@@ -22,19 +23,18 @@ with DAG(
         "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
-    schedule_interval='@once',
+    schedule_interval="@once",
     catchup=False,
 ) as dag:
-    
-    
+
     task_get_data = MySqlOperator(
-        task_id = "get_data_using_query",
-        sql='select * from STREAMER_INFO limit 10;',
-        mysql_conn_id = "aws_rds_conn_id"
+        task_id="get_data_using_query",
+        sql="select * from STREAMER_INFO limit 10;",
+        mysql_conn_id="aws_rds_conn_id",
     )
-    
+
     task_print_data = PythonOperator(
-        task_id='print',
+        task_id="print",
         provide_context=True,
         python_callable=retrieve_data,
     )

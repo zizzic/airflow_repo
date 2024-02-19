@@ -9,7 +9,7 @@ import json
 import os
 import requests
 import logging
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 import slack
 
 
@@ -18,7 +18,9 @@ def get_s_list(**kwargs):
     # RDS 연결 설정
     try:
         mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
-        result = mysql_hook.get_records("SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;")
+        result = mysql_hook.get_records(
+            "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
+        )
     except Exception as e:
         error_msg = f"Error occurred: {str(e)}"
         logging.error((error_msg))
@@ -32,36 +34,40 @@ def get_s_list(**kwargs):
         if row[2]:
             afc.append(row[2])
 
-    kwargs['ti'].xcom_push(key='chzzk',value=chzzk)
-    kwargs['ti'].xcom_push(key='afc',value=afc)
+    kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
+    kwargs["ti"].xcom_push(key="afc", value=afc)
 
 
 def chzzk_raw(**kwargs):
-    chzzk_ids = kwargs['ti'].xcom_pull(key='chzzk',task_ids='get_s_list_task')
+    chzzk_ids = kwargs["ti"].xcom_pull(key="chzzk", task_ids="get_s_list_task")
     live_stream_data = []
 
     for id in chzzk_ids:
-        res = requests.get(f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status")
+        res = requests.get(
+            f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status"
+        )
 
         if res.status_code == 200:
             live_data = res.json()
             live = live_data["content"]["status"]
             if live == "OPEN":
-                stream_data = {'id':id, **live_data}
+                stream_data = {"id": id, **live_data}
                 live_stream_data.append(stream_data)
         else:
             pass
 
-    with open(f'./chzzk_{current_time}.json', 'w') as f:
+    with open(f"./chzzk_{current_time}.json", "w") as f:
         json.dump(live_stream_data, f, indent=4)
 
+
 def afreeca_raw(**kwargs):
-    afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list_task')
+    afreeca_ids = kwargs["ti"].xcom_pull(key="afc", task_ids="get_s_list_task")
 
     live_stream_data = []
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     }
+
     def get_live_status(bjid, headers):
         # BJ의 생방송 상태와 game category, broadcast title 등의 정보를 조회하는 함수
         live_status_url = (
@@ -85,47 +91,52 @@ def afreeca_raw(**kwargs):
             broad_info = broad_res.get("broad")
 
             if live_res.get("RESULT") and broad_info:
-                combined_res = {
-                    "live_status":live_res,
-                    "broad_info":broad_res
-                }
+                combined_res = {"live_status": live_res, "broad_info": broad_res}
 
-                stream_data = {'id': bjid, **combined_res}
+                stream_data = {"id": bjid, **combined_res}
                 live_stream_data.append(stream_data)
 
             else:
                 pass
 
-    with open(f'./afc_{current_time}.json', 'w') as f:
+    with open(f"./afc_{current_time}.json", "w") as f:
         json.dump(live_stream_data, f, indent=4)
 
-def merge_json(local_path,**kwargs):
+
+def merge_json(local_path, **kwargs):
     # 파일 읽고 기존 데이터 로드
     try:
-        with open(f'./chzzk_{current_time}.json', 'r') as f:
+        with open(f"./chzzk_{current_time}.json", "r") as f:
             chzzk_data = json.load(f)
     except FileNotFoundError:
         chzzk_data = []
 
     try:
-        with open(f'./afc_{current_time}.json', 'r') as f:
-            afreeca_data = json.load(f) 
+        with open(f"./afc_{current_time}.json", "r") as f:
+            afreeca_data = json.load(f)
     except FileNotFoundError:
         afreeca_data = []
 
     # 'stream_data'라는 최상위 키로 전체 데이터를 감싸는 새로운 딕셔너리 생성
-    stream_data = {'stream_data': {
-        'chzzk':chzzk_data,
-        'afreeca':afreeca_data,
-    }}
+    stream_data = {
+        "stream_data": {
+            "chzzk": chzzk_data,
+            "afreeca": afreeca_data,
+        }
+    }
 
-    with open(f'{local_path}', 'w') as f:
+    with open(f"{local_path}", "w") as f:
         json.dump(stream_data, f, indent=4)
 
-def upload_file_to_s3_without_reading(local_file_path, bucket_name, s3_key, aws_conn_id):
+
+def upload_file_to_s3_without_reading(
+    local_file_path, bucket_name, s3_key, aws_conn_id
+):
     # S3Hook을 사용하여 파일을 S3에 업로드
     s3_hook = S3Hook(aws_conn_id=aws_conn_id)
-    s3_hook.load_file(filename=local_file_path, bucket_name=bucket_name, replace=True, key=s3_key)
+    s3_hook.load_file(
+        filename=local_file_path, bucket_name=bucket_name, replace=True, key=s3_key
+    )
 
 
 def delete_file(file_path):
@@ -136,84 +147,82 @@ def delete_file(file_path):
     else:
         print(f"The file {file_path} does not exist")
 
+
 def delete_files(**kwargs):
     # 플랫폼별로 파일 삭제
-    platforms = ['afc', 'chzzk']
+    platforms = ["afc", "chzzk"]
     for platform in platforms:
-        file_path = f'./{platform}_{current_time}.json'
+        file_path = f"./{platform}_{current_time}.json"
         delete_file(file_path)
 
     # local_path를 사용하여 파일 삭제
-    file_path = f'{local_path}'
+    file_path = f"{local_path}"
     delete_file(file_path)
+
 
 bucket_name = "de-2-1-bucket"
 
 # dag codes
 with DAG(
-    'get_raw_data',
+    "get_raw_data",
     default_args={
-        'owner': 'airflow',
-        'depends_on_past': False,
-        'start_date': datetime(2024,1,17),
-        'retries': 0,
-        'retry_delay': timedelta(minutes=5),
+        "owner": "airflow",
+        "depends_on_past": False,
+        "start_date": datetime(2024, 1, 17),
+        "retries": 0,
+        "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="*/5 * * * *",
     catchup=False,
-)as dag:
+) as dag:
 
     # load
-    current_time = '{{ data_interval_end}}'
+    current_time = "{{ data_interval_end}}"
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
-    table_name = 'raw_live_viewer'
-    local_name = 'local_raw_live'
-    local_path = f'./{local_name}_{current_time}.json'
-    
+    table_name = "raw_live_viewer"
+    local_name = "local_raw_live"
+    local_path = f"./{local_name}_{current_time}.json"
+
     task_get_s_list = PythonOperator(
         task_id="get_s_list_task",
         python_callable=get_s_list,
         on_failure_callback=slack.on_failure_callback,
     )
-    task_raw_chzzk = PythonOperator(
-        task_id='chzzk_raw_task',
-        python_callable=chzzk_raw
-    )
+    task_raw_chzzk = PythonOperator(task_id="chzzk_raw_task", python_callable=chzzk_raw)
     task_raw_afreeca = PythonOperator(
-        task_id='afreeca_raw_task',
-        python_callable=afreeca_raw
+        task_id="afreeca_raw_task", python_callable=afreeca_raw
     )
     task_merge_json = PythonOperator(
-        task_id='merge_json_task',
+        task_id="merge_json_task",
         python_callable=merge_json,
-        op_kwargs={'local_path':local_path}
+        op_kwargs={"local_path": local_path},
     )
     task_load_raw_data = PythonOperator(
-        task_id='upload_file_directly_to_s3',
+        task_id="upload_file_directly_to_s3",
         python_callable=upload_file_to_s3_without_reading,
         op_kwargs={
-            'local_file_path': local_path,
-            'bucket_name': bucket_name,
-            's3_key': f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
-            'aws_conn_id': "aws_conn_id",
-        }
+            "local_file_path": local_path,
+            "bucket_name": bucket_name,
+            "s3_key": f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
+            "aws_conn_id": "aws_conn_id",
+        },
     )
 
     delete_local_files = PythonOperator(
-        task_id='delete_local_files_task',
+        task_id="delete_local_files_task",
         python_callable=delete_files,
     )
 
     # 파일이 존재하는지 먼저 확인
     if not os.path.exists(local_path):
         # 파일이 존재하지 않으면 빈 JSON 객체로 새 파일 생성
-        with open(local_path, 'w') as f:
+        with open(local_path, "w") as f:
             json.dump({}, f)
 
     # 파일을 읽고 쓰기 모드로 열기
-    with open(local_path, 'r+') as f:
+    with open(local_path, "r+") as f:
         # 파일 내용 읽기
         try:
             data_json = json.load(f)
@@ -223,5 +232,10 @@ with DAG(
 
     data_json = json.dumps(data_json)
 
-task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data >> delete_local_files
-
+(
+    task_get_s_list
+    >> [task_raw_chzzk, task_raw_afreeca]
+    >> task_merge_json
+    >> task_load_raw_data
+    >> delete_local_files
+)

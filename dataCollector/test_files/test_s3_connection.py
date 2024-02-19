@@ -20,15 +20,15 @@ with DAG(
         "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
-    schedule_interval='@once',
+    schedule_interval="@once",
     catchup=False,
 ) as dag:
-    
-    current_time = '{{ data_interval_end}}'
+
+    current_time = "{{ data_interval_end}}"
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
-    table_name = 'raw_live_viewer'
+    table_name = "raw_live_viewer"
 
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",

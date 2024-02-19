@@ -3,6 +3,7 @@ from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 
 from datetime import datetime, timedelta
+
 # from plugins import slack
 from top_300_games import games
 
@@ -29,33 +30,33 @@ def get_ccu():
 @task
 def save_to_json(data):
     result = json.dumps(data)  # API 응답들이 담긴 리스트를 JSON으로 저장
-    
+
     return result
 
 
 with DAG(
-    dag_id = 'game_price_to_s3',
-    start_date = datetime(2024,1,1),
+    dag_id="game_price_to_s3",
+    start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=['Steam_API'],
-    schedule_interval = '@once',
-    default_args = {
-        'retries': 3,
-        'retry_delay': timedelta(seconds=15),
+    tags=["Steam_API"],
+    schedule_interval="@once",
+    default_args={
+        "retries": 3,
+        "retry_delay": timedelta(seconds=15),
         # 'on_failure_callback': slack.on_failure_callback,
-    }
+    },
 ) as dag:
 
     data = get_ccu()
     data_json = save_to_json(data)
-    
+
     bucket_name = "de-2-1-bucket"
-    
+
     current_time = "{{ data_interval_end }}"
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
-    table_name = 'RAW_GAME_PRICE'
+    table_name = "RAW_GAME_PRICE"
 
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
