@@ -1,8 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.mysql.operators.mysql import MySqlOperator
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 
 import json
@@ -30,7 +29,7 @@ def get_s_list(**kwargs):
 
 def chzzk_raw(**kwargs):
     chzzk_ids = kwargs['ti'].xcom_pull(key='chzzk',task_ids='get_s_list_task')
-    live_stream_data = {}
+    live_stream_data = []
 
     for id in chzzk_ids:
         res = requests.get(f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status")
@@ -39,11 +38,12 @@ def chzzk_raw(**kwargs):
             live_data = res.json()
             live = live_data["content"]["status"]
             if live == "OPEN":
-                live_stream_data[id] = live_data
+                stream_data = {'id':id, **live_data}
+                live_stream_data.append(stream_data)
         else:
             pass
 
-    with open('./live_stream_data_chzzk.json', 'w') as f:
+    with open(f'./chzzk_{current_time}.json', 'w') as f:
         json.dump(live_stream_data, f, indent=4)
 
 
@@ -86,20 +86,19 @@ def afreeca_raw(**kwargs):
             else:
                 pass
 
-    with open('./live_stream_data_afreeca.json', 'w') as f:
+    with open(f'./afc_{current_time}.json', 'w') as f:
         json.dump(live_stream_data, f, indent=4)
-    
 
-def merge_json():
+def merge_json(**kwargs):
     # 파일 읽고 기존 데이터 로드
     try:
-        with open('./live_stream_data_chzzk.json', 'r') as f:
+        with open(f'./chzzk_{current_time}.json', 'r') as f:
             chzzk_data = json.load(f)
     except FileNotFoundError:
-        chzzk_data = {}
+        chzzk_data = [{}]
 
     try:
-        with open('./live_stream_data_afreeca.json', 'r') as f:
+        with open(f'./afc_{current_time}.json', 'r') as f:
             afreeca_data = json.load(f) 
     except FileNotFoundError:
         afreeca_data = {}
@@ -110,8 +109,33 @@ def merge_json():
         'afreeca':afreeca_data,
     }}
 
-    with open('./live_stream_data.json', 'w') as f:
+    with open('local_path', 'w') as f:
         json.dump(stream_data, f, indent=4)
+
+def upload_file_to_s3_without_reading(local_file_path, bucket_name, s3_key, aws_conn_id):
+    # S3Hook을 사용하여 파일을 S3에 업로드
+    s3_hook = S3Hook(aws_conn_id=aws_conn_id)
+    s3_hook.load_file(filename=local_file_path, bucket_name=bucket_name, replace=True, key=s3_key)
+
+
+def delete_file(file_path):
+    """주어진 경로의 파일을 삭제하는 함수"""
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"Deleted {file_path}")
+    else:
+        print(f"The file {file_path} does not exist")
+
+def delete_files(**kwargs):
+    # 플랫폼별로 파일 삭제
+    platforms = ['afc', 'chzzk']
+    for platform in platforms:
+        file_path = f'./{platform}_{current_time}.json'
+        delete_file(file_path)
+
+    # local_path를 사용하여 파일 삭제
+    file_path = f'{local_path}'
+    delete_file(file_path)
 
 bucket_name = "de-2-1-bucket"
 
@@ -128,6 +152,15 @@ with DAG(
     schedule_interval="*/5 * * * *",
     catchup=False,
 )as dag:
+
+    # load
+    current_time = '{{ data_interval_end}}'
+    year = "{{ data_interval_end.year }}"
+    month = "{{ data_interval_end.month }}"
+    day = "{{ data_interval_end.day }}"
+    table_name = 'raw_live_viewer'
+    local_name = 'local_raw_live'
+    local_path = f'./{local_name}_{current_time}.json'
     
     task_get_s_list = PythonOperator(
         task_id="get_s_list_task",
@@ -146,38 +179,45 @@ with DAG(
         task_id='merge_json_task',
         python_callable=merge_json
     )
+    task_load_raw_data = PythonOperator(
+        task_id='upload_file_directly_to_s3',
+        python_callable=upload_file_to_s3_without_reading,
+        op_kwargs={
+            'local_file_path': local_path,
+            'bucket_name': bucket_name,
+            's3_key': f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
+            'aws_conn_id': 'aws_conn_id',
+        }
+    )
 
-    # load
-    current_time = '{{ data_interval_end}}'
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
-    table_name = 'raw_live_viewer'
-
-    filename = './live_stream_data.json'
+    delete_local_files = PythonOperator(
+        task_id='delete_local_files_task',
+        python_callable=delete_files,
+    )
 
     # 파일이 존재하는지 먼저 확인
-    if not os.path.exists(filename):
+    if not os.path.exists(local_path):
         # 파일이 존재하지 않으면 빈 JSON 객체로 새 파일 생성
-        with open(filename, 'w') as f:
+        with open(local_path, 'w') as f:
             json.dump({}, f)
 
     # 파일을 읽고 쓰기 모드로 열기
-    with open(filename, 'r+') as f:
+    with open(local_path, 'r+') as f:
         # 파일 내용 읽기
         try:
             data_json = json.load(f)
         except json.JSONDecodeError:
             # 파일이 비어있거나 JSON 형식이 아닐 경우 빈 객체 사용
             data_json = {}
+
     data_json = json.dumps(data_json)
-    task_load_raw_data = S3CreateObjectOperator(
-        task_id="create_object",
-        s3_bucket=bucket_name,
-        s3_key=f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
-        data=data_json,
-        replace=True,
-        aws_conn_id="aws_conn_id",
-    )
-task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
+    # task_load_raw_data = S3CreateObjectOperator(
+    #     task_id="create_object",
+    #     s3_bucket=bucket_name,
+    #     s3_key=f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
+    #     data=data_json,
+    #     replace=True,
+    #     aws_conn_id="aws_conn_id",
+    # )
+task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data >> delete_local_files
 
