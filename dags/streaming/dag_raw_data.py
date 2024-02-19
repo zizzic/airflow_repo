@@ -89,7 +89,7 @@ def afreeca_raw(**kwargs):
     with open(f'./afc_{current_time}.json', 'w') as f:
         json.dump(live_stream_data, f, indent=4)
 
-def merge_json(**kwargs):
+def merge_json(local_path,**kwargs):
     # 파일 읽고 기존 데이터 로드
     try:
         with open(f'./chzzk_{current_time}.json', 'r') as f:
@@ -109,7 +109,7 @@ def merge_json(**kwargs):
         'afreeca':afreeca_data,
     }}
 
-    with open('local_path', 'w') as f:
+    with open(f'{local_path}', 'w') as f:
         json.dump(stream_data, f, indent=4)
 
 def upload_file_to_s3_without_reading(local_file_path, bucket_name, s3_key, aws_conn_id):
@@ -174,10 +174,10 @@ with DAG(
         task_id='afreeca_raw_task',
         python_callable=afreeca_raw
     )
-
     task_merge_json = PythonOperator(
         task_id='merge_json_task',
-        python_callable=merge_json
+        python_callable=merge_json,
+        op_kwargs={'local_path':local_path}
     )
     task_load_raw_data = PythonOperator(
         task_id='upload_file_directly_to_s3',
@@ -186,7 +186,7 @@ with DAG(
             'local_file_path': local_path,
             'bucket_name': bucket_name,
             's3_key': f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
-            'aws_conn_id': 'aws_conn_id',
+            'aws_conn_id': "aws_conn_id",
         }
     )
 
@@ -211,13 +211,6 @@ with DAG(
             data_json = {}
 
     data_json = json.dumps(data_json)
-    # task_load_raw_data = S3CreateObjectOperator(
-    #     task_id="create_object",
-    #     s3_bucket=bucket_name,
-    #     s3_key=f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
-    #     data=data_json,
-    #     replace=True,
-    #     aws_conn_id="aws_conn_id",
-    # )
+
 task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data >> delete_local_files
 
