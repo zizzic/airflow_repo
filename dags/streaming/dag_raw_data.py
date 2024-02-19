@@ -232,10 +232,5 @@ with DAG(
 
     data_json = json.dumps(data_json)
 
-(
-    task_get_s_list
-    >> [task_raw_chzzk, task_raw_afreeca]
-    >> task_merge_json
-    >> task_load_raw_data
-    >> delete_local_files
-)
+task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json
+task_merge_json >> task_load_raw_data >> delete_local_files
