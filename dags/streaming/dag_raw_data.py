@@ -1,26 +1,50 @@
+import logging
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 
 import json
 import os
 import requests
+import logging
 from datetime import datetime,timedelta
+
+def send_slack_notification(message):
+    slack_msg = {
+        "text": message
+    }
+    slack_token = Variable.get("slack_webhook_token")
+
+    slack_operator = SlackWebhookOperator(
+        task_id="send_slack",
+        http_conn_id="slack_conn",  # Airflow Admin UI에서 설정한 Slack Connection ID
+        webhook_token=slack_token,  # 여기에 실제 WebHook 토큰을 입력하세요
+        message=slack_msg,
+        username="airflow"
+    )
+    slack_operator.execute(context={})
 
 # get streamer_list in rds
 def get_s_list(**kwargs):
     # RDS 연결 설정
-    mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
-    result = mysql_hook.get_records("SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;")
-    # kwargs['ti'].xcom_push(key='query_result', value=result)
-    chzzk = []
-    afc = []
+    try:
+        mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
+        result = mysql_hook.get_records("SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;")
+    except Exception as e:
+        error_msg = f"Error occurred: {str(e)}"
+        logging.error((error_msg))
+
+        send_slack_notification(error_msg)
+        raise AirflowException(error_msg)
+
+    chzzk, afc = [], []
     for row in result:
-        if row[1] != '':
+        if row[1]:
             chzzk.append(row[1])
-        if row[2] != '':
+        if row[2]:
             afc.append(row[2])
 
     kwargs['ti'].xcom_push(key='chzzk',value=chzzk)
@@ -45,7 +69,6 @@ def chzzk_raw(**kwargs):
 
     with open(f'./chzzk_{current_time}.json', 'w') as f:
         json.dump(live_stream_data, f, indent=4)
-
 
 def afreeca_raw(**kwargs):
     afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list_task')
