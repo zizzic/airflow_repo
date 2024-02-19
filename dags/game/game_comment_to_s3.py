@@ -3,14 +3,11 @@ from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.models import Variable
 
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 # from plugins import slack
 from top_300_games import games
 
-import re
-import pandas as pd
 import requests
 import json
 
