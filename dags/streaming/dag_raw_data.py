@@ -1,31 +1,17 @@
-import logging
-
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
-from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
+from airflow.exceptions import AirflowException
+
 
 import json
 import os
 import requests
 import logging
 from datetime import datetime,timedelta
+import slack
 
-def send_slack_notification(message):
-    slack_msg = {
-        "text": message
-    }
-    slack_token = Variable.get("slack_webhook_token")
-
-    slack_operator = SlackWebhookOperator(
-        task_id="send_slack",
-        http_conn_id="slack_conn",  # Airflow Admin UI에서 설정한 Slack Connection ID
-        webhook_token=slack_token,  # 여기에 실제 WebHook 토큰을 입력하세요
-        message=slack_msg,
-        username="airflow"
-    )
-    slack_operator.execute(context={})
 
 # get streamer_list in rds
 def get_s_list(**kwargs):
@@ -37,7 +23,6 @@ def get_s_list(**kwargs):
         error_msg = f"Error occurred: {str(e)}"
         logging.error((error_msg))
 
-        send_slack_notification(error_msg)
         raise AirflowException(error_msg)
 
     chzzk, afc = [], []
@@ -189,7 +174,8 @@ with DAG(
     
     task_get_s_list = PythonOperator(
         task_id="get_s_list_task",
-        python_callable=get_s_list
+        python_callable=get_s_list,
+        on_failure_callback=slack.on_failure_callback,
     )
     task_raw_chzzk = PythonOperator(
         task_id='chzzk_raw_task',
