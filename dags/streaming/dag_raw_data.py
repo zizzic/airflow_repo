@@ -50,7 +50,7 @@ def chzzk_raw(**kwargs):
 def afreeca_raw(**kwargs):
     afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list_task')
 
-    live_stream_data = {}
+    live_stream_data = []
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     }
@@ -81,7 +81,9 @@ def afreeca_raw(**kwargs):
                     "live_status":live_res,
                     "broad_info":broad_res
                 }
-                live_stream_data[bjid] = combined_res
+
+                stream_data = {'id': bjid, **combined_res}
+                live_stream_data.append(stream_data)
 
             else:
                 pass
@@ -95,13 +97,13 @@ def merge_json(local_path,**kwargs):
         with open(f'./chzzk_{current_time}.json', 'r') as f:
             chzzk_data = json.load(f)
     except FileNotFoundError:
-        chzzk_data = [{}]
+        chzzk_data = []
 
     try:
         with open(f'./afc_{current_time}.json', 'r') as f:
             afreeca_data = json.load(f) 
     except FileNotFoundError:
-        afreeca_data = {}
+        afreeca_data = []
 
     # 'stream_data'라는 최상위 키로 전체 데이터를 감싸는 새로운 딕셔너리 생성
     stream_data = {'stream_data': {
