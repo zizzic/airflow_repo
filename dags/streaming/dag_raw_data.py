@@ -29,7 +29,7 @@ def get_s_list(**kwargs):
 
 
 def chzzk_raw(**kwargs):
-    chzzk_ids = kwargs['ti'].xcom_pull(key='chzzk',task_ids='get_s_list')
+    chzzk_ids = kwargs['ti'].xcom_pull(key='chzzk',task_ids='get_s_list_task')
     live_stream_data = {}
 
     for id in chzzk_ids:
@@ -48,7 +48,7 @@ def chzzk_raw(**kwargs):
 
 
 def afreeca_raw(**kwargs):
-    afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list')
+    afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list_task')
 
     live_stream_data = {}
     headers = {
@@ -179,5 +179,5 @@ with DAG(
         replace=True,
         aws_conn_id="aws_conn_id",
     )
-task_get_s_list >> task_processing_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
+task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json >> task_load_raw_data
 
