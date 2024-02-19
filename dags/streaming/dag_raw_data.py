@@ -15,29 +15,20 @@ def get_s_list(**kwargs):
     ti = kwargs['ti']
     data = ti.xcom_pull(task_ids="get_data_using_query")
 
-    return data
-
-def process_data(**kwargs):
-    ti = kwargs['ti']
-    # XCom에서 SQL 쿼리 결과 가져오기
-    sql_data = ti.xcom_pull(task_ids='get_s_list_task')
     chzzk = []
     afc = []
-    for row in sql_data:
+    for row in data:
         if row[1] != '':
             chzzk.append(row[1])
         if row[2] != '':
             afc.append(row[2])
-    # 가공된 데이터 반환
-    return [chzzk, afc]
+
+    kwargs['ti'].xcom_push(key='chzzk',value=chzzk)
+    kwargs['ti'].xcom_push(key='afc',value=afc)
 
 
 def chzzk_raw(**kwargs):
-    ti = kwargs['ti']
-    lists = ti.xcom_pull(task_ids='processing_task')
-    print(lists)
-    chzzk, afreeca = lists
-    chzzk_ids = chzzk
+    chzzk_ids = kwargs['ti'].xcom_pull(key='chzzk',task_ids='get_s_list')
     live_stream_data = {}
 
     for id in chzzk_ids:
@@ -51,17 +42,13 @@ def chzzk_raw(**kwargs):
         else:
             pass
 
-    
     with open('./live_stream_data_chzzk.json', 'w') as f:
         json.dump(live_stream_data, f, indent=4)
 
 
 def afreeca_raw(**kwargs):
-    ti = kwargs['ti']
-    lists = ti.xcom_pull(task_ids='processing_task')
-    chzzk, afreeca = lists
+    afreeca_ids = kwargs['ti'].xcom_pull(key='afc', task_ids='get_s_list')
 
-    afreeca_ids = afreeca
     live_stream_data = {}
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -106,7 +93,7 @@ def merge_json():
     # 파일 읽고 기존 데이터 로드
     try:
         with open('./live_stream_data_chzzk.json', 'r') as f:
-            chzzk_data = json.load(f)  
+            chzzk_data = json.load(f)
     except FileNotFoundError:
         chzzk_data = {}
 
