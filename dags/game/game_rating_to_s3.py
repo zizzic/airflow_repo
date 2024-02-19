@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from top_300_games import games
 
 import re
-import pandas as pd
 import requests
 import json
 
