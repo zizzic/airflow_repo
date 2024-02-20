@@ -30,9 +30,9 @@ def get_s_list(**kwargs):
     chzzk, afc = [], []
     for row in result:
         if row[1]:
-            chzzk.append(row[1])
+            chzzk.append((row[0],row[1]))
         if row[2]:
-            afc.append(row[2])
+            afc.append((row[0],row[2]))
 
     kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
     kwargs["ti"].xcom_push(key="afc", value=afc)
@@ -42,7 +42,7 @@ def chzzk_raw(**kwargs):
     chzzk_ids = kwargs["ti"].xcom_pull(key="chzzk", task_ids="get_s_list_task")
     live_stream_data = []
 
-    for id in chzzk_ids:
+    for s_id,id in chzzk_ids:
         res = requests.get(
             f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status"
         )
@@ -51,7 +51,7 @@ def chzzk_raw(**kwargs):
             live_data = res.json()
             live = live_data["content"]["status"]
             if live == "OPEN":
-                stream_data = {"id": id, **live_data}
+                stream_data = {"streamer_id": s_id, "chzzk_s_id": id, **live_data}
                 live_stream_data.append(stream_data)
         else:
             pass
@@ -85,7 +85,7 @@ def afreeca_raw(**kwargs):
         return broad_res
 
     if afreeca_ids != []:
-        for bjid in afreeca_ids:
+        for s_id,bjid in afreeca_ids:
             live_res = get_live_status(bjid, headers)
             broad_res = get_broad_info(bjid, headers)
             broad_info = broad_res.get("broad")
@@ -93,7 +93,7 @@ def afreeca_raw(**kwargs):
             if live_res.get("RESULT") and broad_info:
                 combined_res = {"live_status": live_res, "broad_info": broad_res}
 
-                stream_data = {"id": bjid, **combined_res}
+                stream_data = {"streamer_id": s_id, "afc_s_id": bjid, **combined_res}
                 live_stream_data.append(stream_data)
 
             else:
