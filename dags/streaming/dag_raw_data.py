@@ -38,7 +38,7 @@ def get_s_list(**kwargs):
     kwargs["ti"].xcom_push(key="afc", value=afc)
 
 
-def chzzk_raw(**kwargs):
+def chzzk_raw(current_time,**kwargs):
     chzzk_ids = kwargs["ti"].xcom_pull(key="chzzk", task_ids="get_s_list_task")
     live_stream_data = []
 
@@ -51,7 +51,7 @@ def chzzk_raw(**kwargs):
             live_data = res.json()
             live = live_data["content"]["status"]
             if live == "OPEN":
-                stream_data = {"streamer_id": s_id, "chzzk_s_id": id, **live_data}
+                stream_data = {"streamer_id": s_id, "chzzk_s_id": id, "current_time":current_time, **live_data}
                 live_stream_data.append(stream_data)
         else:
             pass
@@ -60,7 +60,7 @@ def chzzk_raw(**kwargs):
         json.dump(live_stream_data, f, indent=4)
 
 
-def afreeca_raw(**kwargs):
+def afreeca_raw(current_time,**kwargs):
     afreeca_ids = kwargs["ti"].xcom_pull(key="afc", task_ids="get_s_list_task")
 
     live_stream_data = []
@@ -93,7 +93,7 @@ def afreeca_raw(**kwargs):
             if live_res.get("RESULT") and broad_info:
                 combined_res = {"live_status": live_res, "broad_info": broad_res}
 
-                stream_data = {"streamer_id": s_id, "afc_s_id": bjid, **combined_res}
+                stream_data = {"streamer_id": s_id, "afc_s_id": bjid, "current_time":current_time, **combined_res}
                 live_stream_data.append(stream_data)
 
             else:
@@ -138,14 +138,13 @@ def upload_file_to_s3_without_reading(
         filename=local_file_path, bucket_name=bucket_name, replace=True, key=s3_key
     )
 
-
 def delete_file(file_path):
     """주어진 경로의 파일을 삭제하는 함수"""
     if os.path.exists(file_path):
         os.remove(file_path)
-        print(f"Deleted {file_path}")
+        # print(f"Deleted {file_path}")
     else:
-        print(f"The file {file_path} does not exist")
+        # print(f"The file {file_path} does not exist")
 
 
 def delete_files(**kwargs):
@@ -190,9 +189,15 @@ with DAG(
         python_callable=get_s_list,
         on_failure_callback=slack.on_failure_callback,
     )
-    task_raw_chzzk = PythonOperator(task_id="chzzk_raw_task", python_callable=chzzk_raw)
+    task_raw_chzzk = PythonOperator(
+        task_id="chzzk_raw_task",
+        python_callable=chzzk_raw,
+        op_kwargs={"current_time":current_time}
+    )
     task_raw_afreeca = PythonOperator(
-        task_id="afreeca_raw_task", python_callable=afreeca_raw
+        task_id="afreeca_raw_task",
+        python_callable=afreeca_raw,
+        op_kwargs={"current_time":current_time}
     )
     task_merge_json = PythonOperator(
         task_id="merge_json_task",
