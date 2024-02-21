@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-from collections.abc import Iterable
 import json
 import os
 import logging
@@ -22,13 +21,15 @@ def get_s_list(**kwargs):
     # RDS 연결 설정
     try:
         mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
-        result = mysql_hook.get_records(
-            "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
+        result = (
+            mysql_hook.get_records(
+                "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
+            )
+            or []
         )
+        # None 인경우 []로 처리
         chzzk, afc = [], []
-        if result and isinstance(
-            result, Iterable
-        ):  # result가 None이 아닌 경우에만 처리
+        if result:
             for row in result:
                 if row[1]:
                     chzzk.append((row[0], row[1]))
