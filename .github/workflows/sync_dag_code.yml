@@ -36,7 +36,7 @@ jobs:
 
     build:
         needs: path-filter
-        if: (needs.path-filter.outputs.dags-changed == 'true' || needs.path-filter.outputs.plugin-created == 'true') && github.event_name == 'pull_request'
+        if: needs.path-filter.outputs.dags-changed == 'true' && github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
