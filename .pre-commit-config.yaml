@@ -1,0 +1,16 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        language_version: python3.11
+        # Black doesn't use file filters for inclusion, it formats all Python files by default.
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: '7.0.0'
+    hooks:
+      - id: flake8
+        # Use a regex pattern to include dags and tests/dags directories
+        files: ^(dags|tests/dags)/.*\.py$
+        # Add errors that would be ignored
+        args: ['--ignore=E501,W503'] 
