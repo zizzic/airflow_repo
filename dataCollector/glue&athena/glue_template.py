@@ -20,8 +20,7 @@ datasource = glueContext.create_dynamic_frame.from_options(
     's3',
     {'paths': ['{{ input_path }}'], 'recurse':True},
     format='json',
-    transformation_ctx='datasource',
-    additional_options={"bookmarkEnabled":"true"}
+    transformation_ctx='datasource'
 )
 
 # Parquet으로 변환하여 S3에 저장
