@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from collections.abc import Iterable
 import json
 import os
 import logging
@@ -25,7 +26,9 @@ def get_s_list(**kwargs):
             "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
         )
         chzzk, afc = [], []
-        if result:  # result가 None이 아닌 경우에만 처리
+        if result and isinstance(
+            result, Iterable
+        ):  # result가 None이 아닌 경우에만 처리
             for row in result:
                 if row[1]:
                     chzzk.append((row[0], row[1]))
