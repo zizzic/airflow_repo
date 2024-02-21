@@ -200,10 +200,11 @@ with DAG(
         "owner": "airflow",
         "depends_on_past": False,
         "start_date": datetime(2024, 1, 17),
-        "retries": 0,
+        "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="*/5 * * * *",
+    tags=["Streaming"],
     catchup=False,
 ) as dag:
 
