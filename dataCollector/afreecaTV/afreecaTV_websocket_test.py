@@ -46,7 +46,7 @@ def on_open(ws, bj_live_status):
         },
     }
 
-    #print(message)
+    # print(message)
     ws.send(json.dumps(message))
     print("Message sent to the server")
 
@@ -72,7 +72,6 @@ if __name__ == "__main__":
     livestat_wss_url = f"wss://bridge.afreecatv.com/Websocket/{bj_id[0]}"
     print(livestat_wss_url)
     websocket.enableTrace(True)
-    
 
     # live status 가져오기
     sslopt = {"cert_reqs": ssl.CERT_NONE}  # 인증서 검증 관련 test code

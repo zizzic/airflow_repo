@@ -24,10 +24,10 @@ for game in game_list:
     time.sleep(2)
     # 페이지 소스 가져오기 및 BeautifulSoup 객체 생성
     html = driver.page_source
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = BeautifulSoup(html, "html.parser")
 
     # 'video_card_category__xQ15T' 클래스를 가진 span 태그 찾기
-    span_element = soup.find('span', class_='video_card_category__xQ15T')
+    span_element = soup.find("span", class_="video_card_category__xQ15T")
 
     # span 요소의 존재 여부 확인
     if span_element:
@@ -39,7 +39,6 @@ for game in game_list:
 driver.quit()
 
 # to CSV
-df = pd.DataFrame({"game_id": game_list,
-                  "chzzk_game_id": chzzk_game_tags})
+df = pd.DataFrame({"game_id": game_list, "chzzk_game_id": chzzk_game_tags})
 
-df.to_csv("game_list.csv",encoding='utf-8')
+df.to_csv("game_list.csv", encoding="utf-8")
