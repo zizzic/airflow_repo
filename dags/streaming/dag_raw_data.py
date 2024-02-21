@@ -7,7 +7,6 @@ import requests
 
 import slack
 
-
 from requests.exceptions import RequestException
 
 from airflow import DAG
