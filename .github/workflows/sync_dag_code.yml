@@ -81,7 +81,7 @@ jobs:
               env:
                   DEPLOY_DIRECTORY: /home/zizzicteam2/${{ env.REPO_NAME }}
               run: |
-                  rsync -av --include='dags/***' --include='docker-compose.yaml' --include='Dockerfile' --exclude='*' ./ $DEPLOY_DIRECTORY
+                  rsync -av --include='dags/***' --include='plugins/***' --include='docker-compose.yaml' --include='Dockerfile' --exclude='*' ./ $DEPLOY_DIRECTORY
             - name: Restart Docker Services
               if: ${{ needs.path-filter.outputs.docker-changed == 'true' || needs.path-filter.outputs.plugin-created == 'true'}}
               env:
