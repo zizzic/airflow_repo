@@ -13,7 +13,7 @@ import json
 
 
 def connect_to_mysql():
-    db_hook = MySqlHook(mysql_conn_id="de-2-1-tmp-database")
+    db_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
     conn = db_hook.get_conn()
     conn.autocommit = True
 

@@ -40,6 +40,7 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
+    tags=["Glue"],
     catchup=False,
 ) as dag:
 

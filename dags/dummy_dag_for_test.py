@@ -9,6 +9,7 @@ dag = DAG(
     dag_id="dag_cycle_test",
     start_date=airflow.utils.dates.days_ago(3),
     schedule_interval=None,
+    tags=["Streaming"],
     description="A simple test DAG using EmptyOperator",  # DAG 설명 추가
 )
 
