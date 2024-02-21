@@ -109,7 +109,7 @@ def afreeca_raw(current_time, **kwargs):
             try:
                 broad_info = broad_res.get("broad")
                 live_stat = live_res.get("RESULT")
-                if live_stat and broad_info!= None:
+                if live_stat and broad_info:
                     combined_res = {"live_status": live_res, "broad_info": broad_res}
 
                     stream_data = {
@@ -120,7 +120,6 @@ def afreeca_raw(current_time, **kwargs):
                     }
                     live_stream_data.append(stream_data)
 
-
             except (AttributeError, TypeError) as e:
                 error_msg = f"Error occurred: {str(e)}"
                 logging.error((error_msg))
@@ -130,7 +129,7 @@ def afreeca_raw(current_time, **kwargs):
         json.dump(live_stream_data, f, indent=4)
 
 
-def merge_json(current_time,local_path, **kwargs):
+def merge_json(current_time, local_path, **kwargs):
     # 파일 읽고 기존 데이터 로드
     try:
         with open(f"./chzzk_{current_time}.json", "r") as f:
@@ -143,7 +142,7 @@ def merge_json(current_time,local_path, **kwargs):
             afreeca_data = json.load(f)
     except FileNotFoundError:
         afreeca_data = []
-    print(chzzk_data,afreeca_data)
+    print(chzzk_data, afreeca_data)
     # 'stream_data'라는 최상위 키로 전체 데이터를 감싸는 새로운 딕셔너리 생성
     stream_data = {
         "stream_data": {
