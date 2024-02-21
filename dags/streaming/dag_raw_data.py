@@ -22,21 +22,20 @@ def get_s_list(**kwargs):
         result = mysql_hook.get_records(
             "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
         )
+        chzzk, afc = [], []
+        if result:  # result가 None이 아닌 경우에만 처리
+            for row in result:
+                if row[1]:
+                    chzzk.append((row[0], row[1]))
+                if row[2]:
+                    afc.append((row[0], row[2]))
     except Exception as e:
         error_msg = f"Error occurred: {str(e)}"
         logging.error((error_msg))
-
         raise AirflowException(error_msg)
-
-    chzzk, afc = [], []
-    for row in result:
-        if row[1]:
-            chzzk.append((row[0], row[1]))
-        if row[2]:
-            afc.append((row[0], row[2]))
-
-    kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
-    kwargs["ti"].xcom_push(key="afc", value=afc)
+    finally:
+        kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
+        kwargs["ti"].xcom_push(key="afc", value=afc)
 
 
 def chzzk_raw(current_time, **kwargs):
