@@ -6,7 +6,6 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 
-
 # from plugins import slack
 from top_300_games import games
 
