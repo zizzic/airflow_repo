@@ -36,7 +36,7 @@ jobs:
 
     build:
         needs: path-filter
-        if: needs.path-filter.outputs.dags-changed == 'true' && github.event_name == 'pull_request'
+        if: (needs.path-filter.outputs.dags-changed == 'true'|| needs.path-filter.outputs.plugin-created == 'true') && github.event_name == 'pull_request'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -61,8 +61,9 @@ jobs:
             - name: Install Pylint
               run: pip install pylint
             - name: Run Pylint
-              run: find dags/ tests/dags/ -name "*.py" | xargs pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104,C0301
-
+              env:
+                  PYTHONPATH: plugins
+              run: pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104,C0301,C0411 $(find dags/ tests/dags/ plugins/ -name "*.py")
             - name: Test DAG integrity
               run: pytest tests/
 
