@@ -25,7 +25,7 @@ def upload_rendered_script_to_s3(bucket_name, template_s3_key, rendered_s3_key, 
     )
 
 with DAG(
-    "get_raw_data",
+    "glue_test_dag",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
@@ -39,6 +39,7 @@ with DAG(
 
     bucket_name = "de-2-1-bucket"
     local_path = f'./glue_script.py'
+    current_time = "{{ data_interval_end.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
@@ -53,7 +54,7 @@ with DAG(
                 "rendered_s3_key": f"source/script/glue_script.py",
                 # into template
                 'input_path': f's3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/',
-                'output_path': 's3://de-2-1-bucket/source/parquet/', # do change_path
+                'output_path': f's3://de-2-1-bucket/source/parquet/', # do change_path
             }
         )
 
@@ -63,6 +64,7 @@ with DAG(
         script_location= 's3://de-2-1-bucket/source/script/glue_script.py',
         aws_conn_id='aws_conn_id',
         region_name='ap-northeast-2',
+        iam_role_name='AWSGlueServiceRole-crawler',
         dag=dag,
     )
 
