@@ -1,17 +1,19 @@
+from datetime import datetime, timedelta
+
+import json
+import os
+import logging
+import requests
+
+import slack
+
+from requests.exceptions import RequestException
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.exceptions import AirflowException
-
-
-import json
-import os
-import requests
-from requests.exceptions import RequestException
-import logging
-from datetime import datetime, timedelta
-import slack
 
 
 # get streamer_list in rds
@@ -254,23 +256,6 @@ with DAG(
         task_id="delete_local_files_task",
         python_callable=delete_files,
     )
-
-    # # 파일이 존재하는지 먼저 확인
-    # if not os.path.exists(local_path):
-    #     # 파일이 존재하지 않으면 빈 JSON 객체로 새 파일 생성
-    #     with open(local_path, "w") as f:
-    #         json.dump({}, f)
-    #
-    # # 파일을 읽고 쓰기 모드로 열기
-    # with open(local_path, "r+") as f:
-    #     # 파일 내용 읽기
-    #     try:
-    #         data_json = json.load(f)
-    #     except json.JSONDecodeError:
-    #         # 파일이 비어있거나 JSON 형식이 아닐 경우 빈 객체 사용
-    #         data_json = {}
-    #
-    # data_json = json.dumps(data_json)
 
 task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json
 task_merge_json >> task_load_raw_data >> delete_local_files
