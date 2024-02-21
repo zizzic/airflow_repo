@@ -213,6 +213,7 @@ with DAG(
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
+    hour = "{{ data_interval_end.hour }}"
     table_name = "raw_live_viewer"
     local_name = "local_raw_live"
     local_path = f"./{local_name}_{current_time}.json"
@@ -246,7 +247,7 @@ with DAG(
         op_kwargs={
             "local_file_path": local_path,
             "bucket_name": bucket_name,
-            "s3_key": f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
+            "s3_key": f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/hour={hour}/{table_name}_{current_time}.json",
             "aws_conn_id": "aws_conn_id",
         },
         on_failure_callback=slack.on_failure_callback,
@@ -257,22 +258,22 @@ with DAG(
         python_callable=delete_files,
     )
 
-    # 파일이 존재하는지 먼저 확인
-    if not os.path.exists(local_path):
-        # 파일이 존재하지 않으면 빈 JSON 객체로 새 파일 생성
-        with open(local_path, "w") as f:
-            json.dump({}, f)
-
-    # 파일을 읽고 쓰기 모드로 열기
-    with open(local_path, "r+") as f:
-        # 파일 내용 읽기
-        try:
-            data_json = json.load(f)
-        except json.JSONDecodeError:
-            # 파일이 비어있거나 JSON 형식이 아닐 경우 빈 객체 사용
-            data_json = {}
-
-    data_json = json.dumps(data_json)
+    # # 파일이 존재하는지 먼저 확인
+    # if not os.path.exists(local_path):
+    #     # 파일이 존재하지 않으면 빈 JSON 객체로 새 파일 생성
+    #     with open(local_path, "w") as f:
+    #         json.dump({}, f)
+    #
+    # # 파일을 읽고 쓰기 모드로 열기
+    # with open(local_path, "r+") as f:
+    #     # 파일 내용 읽기
+    #     try:
+    #         data_json = json.load(f)
+    #     except json.JSONDecodeError:
+    #         # 파일이 비어있거나 JSON 형식이 아닐 경우 빈 객체 사용
+    #         data_json = {}
+    #
+    # data_json = json.dumps(data_json)
 
 task_get_s_list >> [task_raw_chzzk, task_raw_afreeca] >> task_merge_json
 task_merge_json >> task_load_raw_data >> delete_local_files

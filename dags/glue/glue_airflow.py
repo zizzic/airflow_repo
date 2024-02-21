@@ -47,6 +47,7 @@ with DAG(
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
+    hour = "{{ data_interval_end.hour }}"
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -57,8 +58,8 @@ with DAG(
             "template_s3_key": "source/script/glue_template.py",
             "rendered_s3_key": "source/script/glue_script.py",
             # into template
-            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/",
-            "output_path": "s3://de-2-1-bucket/source/parquet/",  # do change_path
+            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
+            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
         },
     )
 
