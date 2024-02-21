@@ -59,7 +59,7 @@ def get_price():
 
                 if temp and temp[appid]["success"]:
                     break
-                print(f"The response of {appid, name} failed! {i+1} times")
+                print(f"The response of {appid, name} failed! {i + 1} times")
             else:
                 print(f"Failed to get price of {appid, name}!")
 
