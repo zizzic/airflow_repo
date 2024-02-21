@@ -63,8 +63,7 @@ jobs:
             - name: Run Pylint
               env:
                   PYTHONPATH: plugins
-              run: find dags/ tests/dags/ plugins/ -name "*.py" | xargs -r pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104,C0301,C0411
-
+              run: pylint --output-format=colorized --disable=missing-docstring,invalid-name,W0104,C0301,C0411 $(find dags/ tests/dags/ plugins/ -name "*.py")
             - name: Test DAG integrity
               run: pytest tests/
 
