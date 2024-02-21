@@ -106,12 +106,9 @@ def afreeca_raw(current_time, **kwargs):
             live_res = get_live_status(bjid, headers)
             broad_res = get_broad_info(bjid, headers)
 
-            if broad_res != {}:
-                broad_info = broad_res.get("broad")
-            if live_res != {}:
-                live_stat = live_res.get("RESULT")
-
             try:
+                broad_info = broad_res.get("broad")
+                live_stat = live_res.get("RESULT")
                 if live_stat and broad_info:
                     combined_res = {"live_status": live_res, "broad_info": broad_res}
 
@@ -122,6 +119,7 @@ def afreeca_raw(current_time, **kwargs):
                         **combined_res,
                     }
                     live_stream_data.append(stream_data)
+
             except (AttributeError, TypeError) as e:
                 error_msg = f"Error occurred: {str(e)}"
                 logging.error((error_msg))
@@ -131,7 +129,7 @@ def afreeca_raw(current_time, **kwargs):
         json.dump(live_stream_data, f, indent=4)
 
 
-def merge_json(local_path, **kwargs):
+def merge_json(current_time, local_path, **kwargs):
     # 파일 읽고 기존 데이터 로드
     try:
         with open(f"./chzzk_{current_time}.json", "r") as f:
@@ -144,7 +142,7 @@ def merge_json(local_path, **kwargs):
             afreeca_data = json.load(f)
     except FileNotFoundError:
         afreeca_data = []
-
+    print(chzzk_data, afreeca_data)
     # 'stream_data'라는 최상위 키로 전체 데이터를 감싸는 새로운 딕셔너리 생성
     stream_data = {
         "stream_data": {
@@ -238,7 +236,7 @@ with DAG(
     task_merge_json = PythonOperator(
         task_id="merge_json_task",
         python_callable=merge_json,
-        op_kwargs={"local_path": local_path},
+        op_kwargs={"local_path": local_path, "current_time": current_time},
         on_failure_callback=slack.on_failure_callback,
     )
     task_load_raw_data = PythonOperator(

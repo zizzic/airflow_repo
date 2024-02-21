@@ -18,7 +18,7 @@ def on_failure_callback(context):
 # def send_message_to_a_slack_channel(message, emoji, channel, access_token):
 def send_message_to_a_slack_channel(message, emoji):
     # url = "https://slack.com/api/chat.postMessage"
-    url = "https://hooks.slack.com/services/" + Variable.get("slack_url")
+    url = "https://hooks.slack.com/services/" + Variable.get("slack_api_key")
     headers = {
         "content-type": "application/json",
     }
