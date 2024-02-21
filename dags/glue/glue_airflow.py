@@ -5,7 +5,10 @@ from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from datetime import datetime, timedelta
 from jinja2 import Template
 
-def upload_rendered_script_to_s3(bucket_name, template_s3_key, rendered_s3_key, aws_conn_id, **kwargs):
+
+def upload_rendered_script_to_s3(
+    bucket_name, template_s3_key, rendered_s3_key, aws_conn_id, **kwargs
+):
     # S3Hook 인스턴스 생성
     s3_hook = S3Hook(aws_conn_id=aws_conn_id)
 
@@ -21,8 +24,9 @@ def upload_rendered_script_to_s3(bucket_name, template_s3_key, rendered_s3_key, 
         string_data=rendered_script,
         bucket_name=bucket_name,
         key=rendered_s3_key,
-        replace=True
+        replace=True,
     )
+
 
 with DAG(
     "glue_test_dag",
@@ -38,33 +42,33 @@ with DAG(
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
-    local_path = f'./glue_script.py'
+    local_path = "./glue_script.py"
     current_time = "{{ data_interval_end.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
 
     upload_script = PythonOperator(
-            task_id='upload_script_to_s3',
-            python_callable=upload_rendered_script_to_s3,
-            op_kwargs={
-                "bucket_name": bucket_name,
-                "aws_conn_id": "aws_conn_id",
-                "template_s3_key": f"source/script/glue_template.py",
-                "rendered_s3_key": f"source/script/glue_script.py",
-                # into template
-                'input_path': f's3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/',
-                'output_path': f's3://de-2-1-bucket/source/parquet/', # do change_path
-            }
-        )
+        task_id="upload_script_to_s3",
+        python_callable=upload_rendered_script_to_s3,
+        op_kwargs={
+            "bucket_name": bucket_name,
+            "aws_conn_id": "aws_conn_id",
+            "template_s3_key": "source/script/glue_template.py",
+            "rendered_s3_key": "source/script/glue_script.py",
+            # into template
+            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/",
+            "output_path": "s3://de-2-1-bucket/source/parquet/",  # do change_path
+        },
+    )
 
     run_glue_job = GlueJobOperator(
-        task_id='run_glue_job',
-        job_name='DE-2-1-testjob',
-        script_location= 's3://de-2-1-bucket/source/script/glue_script.py',
-        aws_conn_id='aws_conn_id',
-        region_name='ap-northeast-2',
-        iam_role_name='AWSGlueServiceRole-crawler',
+        task_id="run_glue_job",
+        job_name="DE-2-1-testjob",
+        script_location="s3://de-2-1-bucket/source/script/glue_script.py",
+        aws_conn_id="aws_conn_id",
+        region_name="ap-northeast-2",
+        iam_role_name="AWSGlueServiceRole-crawler",
         dag=dag,
     )
 

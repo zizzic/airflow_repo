@@ -12,24 +12,24 @@ spark = glueContext.spark_session
 
 # Job 초기화 (Job Bookmark 활성화 포함)
 job = Job(glueContext)
-args = getResolvedOptions(sys.argv, ['JOB_NAME'])
-job.init(args['JOB_NAME'], args)
+args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+job.init(args["JOB_NAME"], args)
 
 # S3에서 데이터를 읽어오는 부분
 datasource = glueContext.create_dynamic_frame.from_options(
-    's3',
-    {'paths': ['{{ input_path }}'], 'recurse':True},
-    format='json',
-    transformation_ctx='datasource'
+    "s3",
+    {"paths": ["{{ input_path }}"], "recurse": True},
+    format="json",
+    transformation_ctx="datasource",
 )
 
 # Parquet으로 변환하여 S3에 저장
 glueContext.write_dynamic_frame.from_options(
     frame=datasource,
-    connection_type='s3',
-    connection_options={'path': '{{ output_path }}'},
-    format='parquet',
-    transformation_ctx='datasource'
+    connection_type="s3",
+    connection_options={"path": "{{ output_path }}"},
+    format="parquet",
+    transformation_ctx="datasource",
 )
 
 
