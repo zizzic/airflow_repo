@@ -1,17 +1,20 @@
+from datetime import datetime, timedelta
+
+import json
+import os
+import logging
+import requests
+
+import slack
+
+
+from requests.exceptions import RequestException
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.exceptions import AirflowException
-
-
-import json
-import os
-import requests
-from requests.exceptions import RequestException
-import logging
-from datetime import datetime, timedelta
-import slack
 
 
 # get streamer_list in rds

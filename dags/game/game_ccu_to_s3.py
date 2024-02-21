@@ -1,14 +1,14 @@
+from datetime import datetime, timedelta
+import json
+import requests
+
 from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 
-from datetime import datetime, timedelta
 
 # from plugins import slack
 from top_300_games import games
-
-import requests
-import json
 
 
 # {"response":{"player_count":1188079,"result":1}} 이렇게 옴

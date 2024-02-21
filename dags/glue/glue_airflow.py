@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
+
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from datetime import datetime, timedelta
+
 from jinja2 import Template
 
 

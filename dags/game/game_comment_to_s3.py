@@ -1,15 +1,15 @@
+from datetime import datetime, timedelta
+import json
+import requests
+
 from airflow import DAG
 from airflow.decorators import task
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.models import Variable
 
-from datetime import datetime, timedelta
 
 # from plugins import slack
 from top_300_games import games
-
-import requests
-import json
 
 
 # Game info 테이블에 있는 Game들의 app_id를 이용해 게임 정량 평가를 가져오는 함수
