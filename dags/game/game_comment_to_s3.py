@@ -5,7 +5,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.models import Variable
 
 from datetime import datetime, timedelta
-import slack
+from plugins import slack
 
 import requests
 import json
