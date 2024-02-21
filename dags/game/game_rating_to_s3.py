@@ -1,18 +1,23 @@
-import re
-from bs4 import BeautifulSoup
-
-from datetime import datetime, timedelta
-import json
-import requests
-
-
 from airflow import DAG
 from airflow.decorators import task
+from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
+import slack
 
-# from plugins import slack
-from top_300_games import games
+import re
+import requests
+import json
+
+
+def connect_to_mysql():
+    db_hook = MySqlHook(mysql_conn_id="de-2-1-tmp-database")
+    conn = db_hook.get_conn()
+    conn.autocommit = True
+
+    return conn.cursor()
 
 
 # Game info 테이블에 있는 Game들의 app_id를 이용해 게임 정량 평가를 가져오는 함수
@@ -23,8 +28,9 @@ def get_rating(app_id):
 
     reviewdesc_short = soup.find_all("span", {"class": "responsive_reviewdesc_short"})
 
-    if not reviewdesc_short:
+    if reviewdesc_short == []:
         return {
+            "game_id": app_id,
             "ALL_POSITIVE_NUM": 0,
             "ALL_POSITIVE_PERCENT": 0,
             "RECENT_POSITIVE_NUM": 0,
@@ -57,22 +63,51 @@ def get_rating(app_id):
         int(num) for num in re.findall(r"\d+", all_reviews_text.replace(",", ""))
     ][::-1]
 
-    print("r", recent_reviews_numbers)
-    print("a", all_reviews_numbers)
-
     data = {
-        "ALL_POSITIVE_NUM": all_reviews_numbers[0],
-        "ALL_POSITIVE_PERCENT": all_reviews_numbers[1],
+        "game_id": app_id,
+        "all_positive_num": all_reviews_numbers[0],
+        "all_positive_percent": all_reviews_numbers[1],
     }
 
     if len(recent_reviews_numbers) == 0:
-        data["RECENT_POSITIVE_NUM"] = 0
-        data["RECENT_POSITIVE_PERCENT"] = 0
+        data["recent_positive_num"] = 0
+        data["recent_positive_percent"] = 0
     else:
-        data["RECENT_POSITIVE_NUM"] = recent_reviews_numbers[0]
-        data["RECENT_POSITIVE_PERCENT"] = recent_reviews_numbers[1]
+        data["recent_positive_num"] = recent_reviews_numbers[0]
+        data["recent_positive_percent"] = recent_reviews_numbers[1]
 
     return data
+
+
+@task
+def get_ratings_task():
+    # 1. GCE의 RDS의 GAME_INFO 테이블에서 게임 리스트 가져오기
+    cur = connect_to_mysql()
+    sql = """
+            SELECT game_id, game_nm
+            FROM GAME_INFO
+            WHERE IS_TOP300 IN ("T", "F");
+            """
+    cur.execute(sql)
+    records = cur.fetchall()
+
+    data = []
+    # 2. Steam API를 통해 게임별 정량 평가 가져오기
+    for app_id, game in records:
+        temp = get_rating(app_id)
+        data.append(temp)
+        print(game, temp)
+    return data
+
+
+# 3. API 응답들이 담긴 리스트를 JSON으로 저장
+@task
+def save_to_json(data):
+    result = json.dumps(
+        data, ensure_ascii=False
+    )  # API 응답들이 담긴 리스트를 JSON으로 저장
+
+    return result
 
 
 with DAG(
@@ -80,30 +115,13 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["Steam_API"],
-    schedule_interval="@once",
+    schedule_interval="0 0 * * *",
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=1),
-        # 'on_failure_callback': slack.on_failure_callback,
+        "on_failure_callback": slack.on_failure_callback,
     },
 ) as dag:
-
-    @task
-    def get_ratings_task():
-        data = list()
-        for app_id, game in games.items():
-            temp = dict()
-            temp[app_id] = get_rating(app_id)
-            print(game, temp)
-            data.append(temp)
-            print()
-        return data
-
-    @task
-    def save_to_json(data):
-        result = json.dumps(data)  # API 응답들이 담긴 리스트를 JSON으로 저장
-
-        return result
 
     data = get_ratings_task()
     data_json = save_to_json(data)
@@ -114,7 +132,7 @@ with DAG(
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
-    table_name = "RAW_GAME_RATING"
+    table_name = "raw_game_rating"
 
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
