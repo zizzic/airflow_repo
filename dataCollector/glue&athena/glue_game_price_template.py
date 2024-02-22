@@ -1,7 +1,7 @@
 import sys
 
 from pyspark.context import SparkContext
-from pyspark.sql.functions import col, lit, when, udf
+from pyspark.sql.functions import col, lit, when, udf, explode
 from pyspark.sql.types import IntegerType, StringType
 
 from awsglue.context import GlueContext
@@ -38,10 +38,14 @@ game_price_datasource = datasource.toDF()
 remove_krw_udf = udf(remove_krw, StringType())
 
 df = game_price_datasource.select(
-    col("data.steam_appid").alias("GAME_ID"),
+    col("col.data.steam_appid").alias("GAME_ID"),
     lit("{{ collect_date }}").alias("COLLECT_DATE"),
-    remove_krw_udf(col("data.price_overview.final_formatted")).cast(IntegerType()).alias("CURRENT_PRICE"),
-    when(col("data.price_overview.discount_percent") == 0, 'F').otherwise('T').alias("IS_DISCOUNT")
+    when(col("col.data.price_overview").isNull(), 0)
+        .otherwise(remove_krw_udf(col("col.data.price_overview.final_formatted")).cast(IntegerType()))
+        .alias("CURRENT_PRICE"),
+    when(col("col.data.price_overview").isNull(), 'F')
+        .otherwise(when(col("col.data.price_overview.discount_percent") == 0, 'F').otherwise('T'))
+        .alias("IS_DISCOUNT")
 )
 
 dynamic_frame = DynamicFrame.fromDF(df, glueContext, "dynamic_frame")
