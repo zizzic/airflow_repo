@@ -40,7 +40,7 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
-    tags=["glue","streaming"],
+    tags=["glue", "streaming"],
     catchup=False,
 ) as dag:
 
