@@ -31,7 +31,7 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_test_dag",
+    "glue_live_viewer",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
@@ -39,6 +39,7 @@ with DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
+    tags=["glue","streaming"],
     schedule_interval="0 * * * *",
     catchup=False,
 ) as dag:
@@ -67,7 +68,7 @@ with DAG(
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-testjob",
+        job_name="DE-2-1-testjob2", # when launch, plz clean&change glue jobs
         script_location="s3://de-2-1-bucket/source/script/live_viewer_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
