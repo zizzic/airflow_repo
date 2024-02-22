@@ -40,16 +40,16 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
+    tags=["glue","streaming"],
     catchup=False,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
-    local_path = "./glue_script.py"
-    current_time = "{{ data_interval_end.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
-    hour = "{{ data_interval_end.hour }}"
+    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
+    year = "{{ data_interval_end.year.in_timezone('Asia/Seoul') }}"
+    month = "{{ data_interval_end.month.in_timezone('Asia/Seoul') }}"
+    day = "{{ data_interval_end.day.in_timezone('Asia/Seoul') }}"
+    hour = "{{ data_interval_end.hour.in_timezone('Asia/Seoul') }}"
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
