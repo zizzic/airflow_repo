@@ -3,7 +3,7 @@ repos:
       rev: 24.2.0
       hooks:
           - id: black
-            language_version: python3.11
+            language_version: python3.10
             # Black doesn't use file filters for inclusion, it formats all Python files by default.
 
     - repo: https://github.com/PyCQA/flake8

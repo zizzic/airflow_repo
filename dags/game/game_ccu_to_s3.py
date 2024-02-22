@@ -65,6 +65,7 @@ def get_ccu():
 # 3. API 응답들이 담긴 리스트를 JSON으로 저장
 @task
 def save_to_json(data):
+    data = {"raw_game_ccu": data}
     result = json.dumps(data, ensure_ascii=False)
 
     return result
