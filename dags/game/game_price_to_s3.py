@@ -108,10 +108,11 @@ with DAG(
 
     bucket_name = "de-2-1-bucket"
 
-    current_time = "{{ data_interval_end }}"
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
+    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ data_interval_end.in_timezone('Asia/Seoul').hour }}"
     table_name = "raw_game_price"
 
     task_load_raw_data = S3CreateObjectOperator(
