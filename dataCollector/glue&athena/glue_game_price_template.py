@@ -2,7 +2,7 @@ import sys
 
 from pyspark.context import SparkContext
 from pyspark.sql.functions import col, lit, when, udf, explode
-from pyspark.sql.types import IntegerType, StringType
+from pyspark.sql.types import StringType
 
 from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
@@ -11,7 +11,9 @@ from awsglue.utils import getResolvedOptions
 
 
 def remove_krw(price):
-    return price.replace('₩ ', '')
+    if price is None:
+        return 0
+    return int(price.replace("₩", "").replace(",", "").strip())
 
 
 # SparkContext와 GlueContext 초기화
@@ -32,19 +34,27 @@ datasource = glueContext.create_dynamic_frame.from_options(
     transformation_ctx="datasource",
 )
 
-# 전처리 하기
+# 전처리를 위해 DF로 변환하기
 game_price_datasource = datasource.toDF()
 
+# 최상위 레벨의 key를 중심으로 explode하기
+df = game_price_datasource.select(explode(game_price_datasource.raw_game_price).alias("raw_game_price"))
+
+# 게임 가격을 전처리하는 udf 정의
 remove_krw_udf = udf(remove_krw, StringType())
 
-df = game_price_datasource.select(
-    col("col.data.steam_appid").alias("GAME_ID"),
+# 이제 nested된 필드(key)들에 접근할 수 있음
+df = df.select(
+    col("raw_game_price.data.steam_appid").alias("GAME_ID"),
     lit("{{ collect_date }}").alias("COLLECT_DATE"),
-    when(col("col.data.price_overview").isNull(), 0)
-        .otherwise(remove_krw_udf(col("col.data.price_overview.final_formatted")).cast(IntegerType()))
+    when(col("raw_game_price.data.price_overview").isNull(), 0)
+        .otherwise(
+            when(col("raw_game_price.data.price_overview.final_formatted").isNull(), 0)
+                .otherwise(remove_krw_udf(col("raw_game_price.data.price_overview.final_formatted")))
+        )
         .alias("CURRENT_PRICE"),
-    when(col("col.data.price_overview").isNull(), 'F')
-        .otherwise(when(col("col.data.price_overview.discount_percent") == 0, 'F').otherwise('T'))
+    when(col("raw_game_price.data.price_overview").isNull(), 'F')
+        .otherwise(when(col("raw_game_price.data.price_overview.discount_percent") == 0, 'F').otherwise('T'))
         .alias("IS_DISCOUNT")
 )
 

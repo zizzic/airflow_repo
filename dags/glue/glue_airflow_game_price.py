@@ -70,7 +70,7 @@ with DAG(
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
         job_name="DE-2-1-glue_game_price_job",
-        script_location="s3://de-2-1-bucket/source/script/glue_game_script.py",
+        script_location="s3://de-2-1-bucket/source/script/glue_game_price_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
