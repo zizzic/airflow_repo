@@ -1,9 +1,18 @@
 import sys
-from awsglue.transforms import *
-from awsglue.utils import getResolvedOptions
+
 from pyspark.context import SparkContext
+from pyspark.sql.functions import col, lit, when, udf
+from pyspark.sql.types import IntegerType, StringType
+
 from awsglue.context import GlueContext
+from awsglue.dynamicframe import DynamicFrame
 from awsglue.job import Job
+from awsglue.utils import getResolvedOptions
+
+
+def remove_krw(price):
+    return price.replace('₩ ', '')
+
 
 # SparkContext와 GlueContext 초기화
 sc = SparkContext()
@@ -23,13 +32,27 @@ datasource = glueContext.create_dynamic_frame.from_options(
     transformation_ctx="datasource",
 )
 
+# 전처리 하기
+game_price_datasource = datasource.toDF()
+
+remove_krw_udf = udf(remove_krw, StringType())
+
+df = game_price_datasource.select(
+    col("data.steam_appid").alias("GAME_ID"),
+    lit("{{ collect_date }}").alias("COLLECT_DATE"),
+    remove_krw_udf(col("data.price_overview.final_formatted")).cast(IntegerType()).alias("CURRENT_PRICE"),
+    when(col("data.price_overview.discount_percent") == 0, 'F').otherwise('T').alias("IS_DISCOUNT")
+)
+
+dynamic_frame = DynamicFrame.fromDF(df, glueContext, "dynamic_frame")
+
 # Parquet으로 변환하여 S3에 저장
 glueContext.write_dynamic_frame.from_options(
-    frame=datasource,
+    frame=dynamic_frame,
     connection_type="s3",
     connection_options={"path": "{{ output_path }}"},
     format="parquet",
-    transformation_ctx="datasource",
+    transformation_ctx="dynamic_frame",
 )
 
 

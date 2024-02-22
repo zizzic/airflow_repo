@@ -31,15 +31,16 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_test_dag",
+    "glue_airflow_game_price",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 1, 17),
+        "start_date": datetime(2024, 2, 22),
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
+    tags=["Steam_Glue", "Game_Price"],
     catchup=False,
 ) as dag:
 
@@ -49,7 +50,7 @@ with DAG(
     year = "{{ data_interval_end.year }}"
     month = "{{ data_interval_end.month }}"
     day = "{{ data_interval_end.day }}"
-    hour = "{{ data_interval_end.hour }}"
+    # hour = "{{ data_interval_end.hour }}"
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -57,18 +58,19 @@ with DAG(
         op_kwargs={
             "bucket_name": bucket_name,
             "aws_conn_id": "aws_conn_id",
-            "template_s3_key": "source/script/glue_template.py",
-            "rendered_s3_key": "source/script/glue_script.py",
+            "template_s3_key": "source/script/glue_game_price_template.py",
+            "rendered_s3_key": "source/script/glue_game_price_script.py",
             # into template
-            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
-            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
+            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_game_price/year={year}/month={month}/day={day}/",
+            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_game_price/year={year}/month={month}/day={day}/",
+            "collect_date": f"{year}-{month}-{day}",
         },
     )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-testjob",
-        script_location="s3://de-2-1-bucket/source/script/glue_script.py",
+        job_name="DE-2-1-glue_game_price_job",
+        script_location="s3://de-2-1-bucket/source/script/glue_game_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
