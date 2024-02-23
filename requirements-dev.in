@@ -1,0 +1,14 @@
+# In order to add, delete or modify a dependency, please update
+# the reference here and then run:
+#
+# - `pip-compile --rebuild requirements.in`
+# - `pip-compile --rebuild requirements-dev.in`
+
+-c requirements.txt
+
+pip-tools==7.3.0
+pytest==7.4.3
+pytest-mock==3.12.0
+black==23.11.0
+types-PyYAML==6.0.12.12
+types-pytz==2023.3.1.1

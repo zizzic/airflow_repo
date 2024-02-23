@@ -51,12 +51,11 @@ jobs:
                   echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
                   echo "AIRFLOW_VERSION=2.7.2" >> $GITHUB_ENV
 
-            - name: Install dependencies
-              run: |
-                  CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-                  echo "Installing Apache Airflow version ${AIRFLOW_VERSION} with constraints from ${CONSTRAINT_URL}"
-                  pip install "apache-airflow[amazon,mysql]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
-                  pip install pytest
+            - name: Installs dependencies
+              run: pip install -r requirements.txt
+
+            - name: Installs test dependencies
+              run: pip install -r requirements-dev.txt
 
             - name: Install Pylint
               run: pip install pylint
