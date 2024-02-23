@@ -38,9 +38,11 @@ datasource = glueContext.create_dynamic_frame.from_options(
 game_price_datasource = datasource.toDF()
 
 # 최상위 레벨의 key를 중심으로 explode하기
-df = game_price_datasource.select(explode(game_price_datasource.raw_game_price).alias("raw_game_price"))
+df = game_price_datasource.select(
+    explode(game_price_datasource.raw_game_price).alias("raw_game_price")
+)
 
-# 게임 가격을 전처리하는 udf 정의
+# 게임 가격을 전처리하는 udf 정의하기
 remove_krw_udf = udf(remove_krw, StringType())
 
 # 이제 nested된 필드(key)들에 접근할 수 있음
@@ -48,14 +50,21 @@ df = df.select(
     col("raw_game_price.data.steam_appid").alias("GAME_ID"),
     lit("{{ collect_date }}").alias("COLLECT_DATE"),
     when(col("raw_game_price.data.price_overview").isNull(), 0)
-        .otherwise(
-            when(col("raw_game_price.data.price_overview.final_formatted").isNull(), 0)
-                .otherwise(remove_krw_udf(col("raw_game_price.data.price_overview.final_formatted")))
+    .otherwise(
+        when(
+            col("raw_game_price.data.price_overview.final_formatted").isNull(), 0
+        ).otherwise(
+            remove_krw_udf(col("raw_game_price.data.price_overview.final_formatted"))
         )
-        .alias("CURRENT_PRICE"),
-    when(col("raw_game_price.data.price_overview").isNull(), 'F')
-        .otherwise(when(col("raw_game_price.data.price_overview.discount_percent") == 0, 'F').otherwise('T'))
-        .alias("IS_DISCOUNT")
+    )
+    .alias("CURRENT_PRICE"),
+    when(col("raw_game_price.data.price_overview").isNull(), "F")
+    .otherwise(
+        when(
+            col("raw_game_price.data.price_overview.discount_percent") == 0, "F"
+        ).otherwise("T")
+    )
+    .alias("IS_DISCOUNT"),
 )
 
 dynamic_frame = DynamicFrame.fromDF(df, glueContext, "dynamic_frame")
