@@ -31,7 +31,7 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_airflow_game_price",
+    "glue_game_price",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
@@ -40,17 +40,16 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
-    tags=["Steam_Glue", "Game_Price"],
+    tags=["glue", "Game_Price"],
     catchup=False,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
-    local_path = "./glue_script.py"
-    current_time = "{{ data_interval_end.strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
-    # hour = "{{ data_interval_end.hour }}"
+    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul') }}"  # before 1 hour
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -69,7 +68,7 @@ with DAG(
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-glue_game_price_job",
+        job_name="de-2-1_game_price",
         script_location="s3://de-2-1-bucket/source/script/glue_game_price_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",

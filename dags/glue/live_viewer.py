@@ -46,9 +46,9 @@ with DAG(
 
     bucket_name = "de-2-1-bucket"
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year.in_timezone('Asia/Seoul') }}"
-    month = "{{ data_interval_end.month.in_timezone('Asia/Seoul') }}"
-    day = "{{ data_interval_end.day.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul') }}"  # before 1 hour
 
     upload_script = PythonOperator(
@@ -67,7 +67,7 @@ with DAG(
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-testjob2",  # when launch, plz clean&change glue jobs
+        job_name="de-2-1_live_viewer",  # when launch, plz clean&change glue jobs
         script_location="s3://de-2-1-bucket/source/script/live_viewer_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
