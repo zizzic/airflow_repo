@@ -50,7 +50,7 @@ def chzzk_raw(current_time, **kwargs):
 
     for s_id, id in chzzk_ids:
         res = requests.get(
-            f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status"
+            f"https://api.chzzk.naver.com/service/v2/channels/{id}/live-detail"
         )
 
         if res.status_code == 200:
