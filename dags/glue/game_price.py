@@ -83,7 +83,7 @@ with DAG(
     
     wait_for_job = GlueJobSensor(
         task_id="wait_for_job_game_price_glue_job", # task_id 직관적으로 알 수 있도록 변경 권장
-        job_name="DE-2-1-glue_game_price_job",
+        job_name="de-2-1_game_price",
         # Job ID extracted from previous Glue Job Operator task
         run_id=run_glue_job.output,
         verbose=True,  # prints glue job logs in airflow logs
