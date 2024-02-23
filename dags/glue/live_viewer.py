@@ -49,7 +49,7 @@ with DAG(
     year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
     month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
     day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
-    hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul') }}"  # before 1 hour
+    hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",

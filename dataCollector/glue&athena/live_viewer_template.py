@@ -60,7 +60,7 @@ dynamicframe = DynamicFrame.fromDF(result_df, glueContext, "dynamicframe")
 
 # Parquet으로 변환하여 S3에 저장
 glueContext.write_dynamic_frame.from_options(
-    frame=datasource,
+    frame=dynamicframe,
     connection_type="s3",
     connection_options={"path": "{{ output_path }}"},
     format="parquet",
