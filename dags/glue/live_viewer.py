@@ -5,8 +5,6 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
-from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
-from airflow.providers.amazon.aws.sensors.glue_crawler import GlueCrawlerSensor
 from jinja2 import Template
 
 
@@ -33,18 +31,16 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_game_price",
+    "glue_live_viewer",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 2, 22),
+        "start_date": datetime(2024, 1, 17),
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
-
-    schedule_interval="0 1 * * *",
-    tags=["glue", "Game_Price"],
-
+    tags=["glue", "streaming"],
+    schedule_interval="0 * * * *",
     catchup=False,
 ) as dag:
 
@@ -55,39 +51,28 @@ with DAG(
     day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul') }}"  # before 1 hour
 
-
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
         python_callable=upload_rendered_script_to_s3,
         op_kwargs={
             "bucket_name": bucket_name,
             "aws_conn_id": "aws_conn_id",
-            "template_s3_key": "source/script/glue_game_price_template.py",
-            "rendered_s3_key": "source/script/glue_game_price_script.py",
+            "template_s3_key": "source/script/live_viewer_template.py",
+            "rendered_s3_key": "source/script/live_viewer_script.py",
             # into template
-            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_game_price/year={year}/month={month}/day={day}/",
-            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_game_price/year={year}/month={month}/day={day}/",
-            "collect_date": f"{year}-{month}-{day}",
+            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
+            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
         },
     )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="de-2-1_game_price",
-        script_location="s3://de-2-1-bucket/source/script/glue_game_price_script.py",
+        job_name="de-2-1_live_viewer",  # when launch, plz clean&change glue jobs
+        script_location="s3://de-2-1-bucket/source/script/live_viewer_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
         dag=dag,
     )
-    
-    wait_for_job = GlueJobSensor(
-        task_id="wait_for_job_game_price_glue_job", # task_id 직관적으로 알 수 있도록 변경 권장
-        job_name="DE-2-1-glue_game_price_job",
-        # Job ID extracted from previous Glue Job Operator task
-        run_id=run_glue_job.output,
-        verbose=True,  # prints glue job logs in airflow logs
-        aws_conn_id="aws_conn_id",
-    )
 
-upload_script >> run_glue_job >> wait_for_job
+upload_script >> run_glue_job
