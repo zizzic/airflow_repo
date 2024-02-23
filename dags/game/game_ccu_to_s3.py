@@ -12,7 +12,7 @@ import time
 
 
 def connect_to_mysql():
-    db_hook = MySqlHook(mysql_conn_id="de-2-1-tmp-database")
+    db_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
     conn = db_hook.get_conn()
     conn.autocommit = True
 
@@ -65,6 +65,7 @@ def get_ccu():
 # 3. API 응답들이 담긴 리스트를 JSON으로 저장
 @task
 def save_to_json(data):
+    data = {"raw_game_ccu": data}
     result = json.dumps(data, ensure_ascii=False)
 
     return result
@@ -88,11 +89,11 @@ with DAG(
 
     bucket_name = "de-2-1-bucket"
 
-    current_time = "{{ data_interval_end }}"
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
-    hour = "{{ data_interval_end.hour }}"
+    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ data_interval_end.in_timezone('Asia/Seoul').hour }}"
     table_name = "raw_game_ccu"
 
     task_load_raw_data = S3CreateObjectOperator(

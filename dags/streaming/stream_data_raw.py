@@ -21,11 +21,15 @@ def get_s_list(**kwargs):
     # RDS 연결 설정
     try:
         mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
-        result = mysql_hook.get_records(
-            "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
+        result = (
+            mysql_hook.get_records(
+                "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
+            )
+            or []
         )
+        # None 인경우 []로 처리
         chzzk, afc = [], []
-        if result:  # result가 None이 아닌 경우에만 처리
+        if result:
             for row in result:
                 if row[1]:
                     chzzk.append((row[0], row[1]))
@@ -46,7 +50,7 @@ def chzzk_raw(current_time, **kwargs):
 
     for s_id, id in chzzk_ids:
         res = requests.get(
-            f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status"
+            f"https://api.chzzk.naver.com/service/v2/channels/{id}/live-detail"
         )
 
         if res.status_code == 200:
@@ -200,19 +204,20 @@ with DAG(
         "owner": "airflow",
         "depends_on_past": False,
         "start_date": datetime(2024, 1, 17),
-        "retries": 0,
+        "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="*/5 * * * *",
+    tags=["Streaming"],
     catchup=False,
 ) as dag:
 
     # load
-    current_time = "{{ data_interval_end}}"
-    year = "{{ data_interval_end.year }}"
-    month = "{{ data_interval_end.month }}"
-    day = "{{ data_interval_end.day }}"
-    hour = "{{ data_interval_end.hour }}"
+    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ data_interval_end.in_timezone('Asia/Seoul').hour }}"
     table_name = "raw_live_viewer"
     local_name = "local_raw_live"
     local_path = f"./{local_name}_{current_time}.json"
