@@ -1,0 +1,5 @@
+version: '3'
+
+services:
+  interpreter:
+    image: nzkangho/airflow:2.7.2-0.1-dev
