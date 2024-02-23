@@ -83,19 +83,6 @@ def afreeca_raw(current_time, **kwargs):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     }
 
-    def get_live_status(bjid, headers):
-        # BJ의 생방송 상태와 game category, broadcast title 등의 정보를 조회하는 함수
-        try:
-            live_status_url = (
-                f"https://live.afreecatv.com/afreeca/player_live_api.php?bjid={bjid}"
-            )
-            live_res = requests.post(
-                live_status_url, headers=headers, data={"bid": bjid, "type": "live"}
-            ).json()["CHANNEL"]
-        except RequestException:
-            live_res = {}
-        return live_res
-
     def get_broad_info(bjid, headers):
         # BJ의 생방송 상태, 실시간 시청자 수, timestamp를 조회하는 함수
         broad_url = f"https://bjapi.afreecatv.com/api/{bjid}/station"
@@ -108,14 +95,13 @@ def afreeca_raw(current_time, **kwargs):
 
     if afreeca_ids != []:
         for s_id, bjid in afreeca_ids:
-            live_res = get_live_status(bjid, headers)
             broad_res = get_broad_info(bjid, headers)
 
             try:
                 broad_info = broad_res.get("broad")
-                live_stat = live_res.get("RESULT")
-                if live_stat and broad_info:
-                    combined_res = {"live_status": live_res, "broad_info": broad_res}
+
+                if broad_info:
+                    combined_res = {"broad_info": broad_res}
 
                     stream_data = {
                         "streamer_id": s_id,
@@ -208,7 +194,7 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 * * * *",
-    tags=["Streaming","follower"],
+    tags=["Streaming", "follower"],
     catchup=False,
 ) as dag:
 
