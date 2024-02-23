@@ -1,3 +1,4 @@
+# 수집 시간, 스트리머 아이디, 구독자 수
 from datetime import datetime, timedelta
 
 import json
@@ -49,22 +50,18 @@ def chzzk_raw(current_time, **kwargs):
     live_stream_data = []
 
     for s_id, id in chzzk_ids:
-        res = requests.get(
-            f"https://api.chzzk.naver.com/polling/v2/channels/{id}/live-status"
-        )
+        res = requests.get(f"https://api.chzzk.naver.com/service/v1/channels/{id}")
 
         if res.status_code == 200:
             live_data = res.json()
             try:
-                live = live_data["content"]["status"]
-                if live == "OPEN":
-                    stream_data = {
-                        "streamer_id": s_id,
-                        "chzzk_s_id": id,
-                        "current_time": current_time,
-                        **live_data,
-                    }
-                    live_stream_data.append(stream_data)
+                stream_data = {
+                    "streamer_id": s_id,
+                    "chzzk_s_id": id,
+                    "current_time": current_time,
+                    **live_data,
+                }
+                live_stream_data.append(stream_data)
             except KeyError as e:
                 error_msg = f"Error occurred: {str(e)}"
                 logging.error((error_msg))
@@ -185,7 +182,7 @@ bucket_name = "de-2-1-bucket"
 
 # dag codes
 with DAG(
-    "get_raw_data",
+    "follower_raw",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
@@ -204,7 +201,7 @@ with DAG(
     month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
     day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
     hour = "{{ data_interval_end.in_timezone('Asia/Seoul').hour }}"
-    table_name = "raw_live_viewer"
+    table_name = "followers"
     local_name = "local_raw_live"
     local_path = f"./{local_name}_{current_time}.json"
 
@@ -237,7 +234,7 @@ with DAG(
         op_kwargs={
             "local_file_path": local_path,
             "bucket_name": bucket_name,
-            "s3_key": f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/hour={hour}/{table_name}_{current_time}.json",
+            "s3_key": f"source/json/table_name={table_name}/year={year}/month={month}/day={day}/{table_name}_{current_time}.json",
             "aws_conn_id": "aws_conn_id",
         },
         on_failure_callback=slack.on_failure_callback,
