@@ -5,6 +5,9 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
+from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
+from airflow.providers.amazon.aws.sensors.glue_crawler import GlueCrawlerSensor
+
 from jinja2 import Template
 
 
@@ -46,9 +49,9 @@ with DAG(
 
     bucket_name = "de-2-1-bucket"
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year.in_timezone('Asia/Seoul') }}"
-    month = "{{ data_interval_end.month.in_timezone('Asia/Seoul') }}"
-    day = "{{ data_interval_end.day.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -75,4 +78,13 @@ with DAG(
         dag=dag,
     )
 
-upload_script >> run_glue_job
+    wait_for_job = GlueJobSensor(
+        task_id="wait_for_job_game_price_glue_job", # task_id 직관적으로 알 수 있도록 변경 권장
+        job_name="DE-2-1-glue_game_price_job",
+        # Job ID extracted from previous Glue Job Operator task
+        run_id=run_glue_job.output,
+        verbose=True,  # prints glue job logs in airflow logs
+        aws_conn_id="aws_conn_id",
+    )
+
+upload_script >> run_glue_job >> wait_for_job
