@@ -36,6 +36,13 @@ VERSION=2.7.2-0.1
 docker run --rm --volume $(pwd):/src --workdir /src nzkangho/airflow:${VERSION}-dev pytest . --color=yes -vv
 ```
 
+# Set up
+
+## Pycharm
+[docker-compose.interpreter.yaml](./docker-compose.interpreter.yaml)를 이용하여 Pycharm에서 python interpreter로 설정할 수 있음
+
+설정방법은 notion [문서](https://www.notion.so/Integrate-Docker-with-Jetbrains-8c591359332147fe9f32eeec04123bba?pvs=4) 확인
+
 # Docker Images
 
 See [docker](./docker).
