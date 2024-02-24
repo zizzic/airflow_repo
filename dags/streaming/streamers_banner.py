@@ -19,15 +19,15 @@ def get_s_list(**kwargs):
     mysql_hook = MySqlHook(mysql_conn_id="aws_rds_conn_id")
     query = "SELECT STREAMER_ID, CHZ_ID, AFC_ID FROM STREAMER_INFO;"
     try:
-        result = mysql_hook.get_records(query)
+        result = mysql_hook.get_records(query) or []
         chzzk = [(row[0], row[1]) for row in result if row[1]]
         afc = [(row[0], row[2]) for row in result if row[2]]
     except Exception as e:
         logging.error(f"Error occurred while fetching streamer list: {e}")
         raise AirflowException("Failed to fetch streamer list from RDS.")
-    else:
-        kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
-        kwargs["ti"].xcom_push(key="afc", value=afc)
+
+    kwargs["ti"].xcom_push(key="chzzk", value=chzzk)
+    kwargs["ti"].xcom_push(key="afc", value=afc)
 
 
 def chzzk_banner(**kwargs):

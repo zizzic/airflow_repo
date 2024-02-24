@@ -45,7 +45,7 @@ def get_rds_game_info():
         FROM GAME_INFO
         WHERE IS_TOP300 IN ('T', 'F');
     """
-    records = mysql_hook.get_records(query)
+    records = mysql_hook.get_records(query) or []
 
     api_key = Variable.get("steam_api_key")
     params = {"key": api_key, "json": "1"}
