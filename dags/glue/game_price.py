@@ -82,7 +82,7 @@ with DAG(
         job_name="de-2-1_game_price",
         # Job ID extracted from previous Glue Job Operator task
         run_id=run_glue_job.output,
-        verbose=True,  # prints glue job logs in airflow logs
+        verbose=False,  # prints glue job logs in airflow logs
         # region_name="ap-northeast-2",
         aws_conn_id="aws_conn_id",
     )
