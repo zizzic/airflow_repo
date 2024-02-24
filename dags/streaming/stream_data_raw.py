@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 
 import json
@@ -55,6 +56,9 @@ def chzzk_raw(current_time, **kwargs):
 
         if res.status_code == 200:
             live_data = res.json()
+            if live_data["content"]["liveId"]:
+                time.sleep(5)
+                live_data = requests.get(f"https://api.chzzk.naver.com/service/v2/channels/{id}/live-detail").json()
             try:
                 live = live_data["content"]["status"]
                 if live == "OPEN":

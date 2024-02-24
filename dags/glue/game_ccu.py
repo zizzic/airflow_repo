@@ -5,6 +5,7 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
+from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
 from jinja2 import Template
 
 
@@ -31,25 +32,25 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_test_dag",
+    "glue_game_ccu",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 1, 17),
+        "start_date": datetime(2024, 2, 22),
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
-    schedule_interval="0 * * * *",
-    tags=["glue", "streaming"],
+    schedule_interval="5 * * * *",
+    tags=["glue", "Game_CCU"],
     catchup=False,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year.in_timezone('Asia/Seoul') }}"
-    month = "{{ data_interval_end.month.in_timezone('Asia/Seoul') }}"
-    day = "{{ data_interval_end.day.in_timezone('Asia/Seoul') }}"
-    hour = "{{ data_interval_end.hour.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -57,22 +58,33 @@ with DAG(
         op_kwargs={
             "bucket_name": bucket_name,
             "aws_conn_id": "aws_conn_id",
-            "template_s3_key": "source/script/glue_template.py",
-            "rendered_s3_key": "source/script/glue_script.py",
+            "template_s3_key": "source/script/glue_game_ccu_template.py",
+            "rendered_s3_key": "source/script/glue_game_ccu_script.py",
             # into template
-            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
-            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
+            "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_game_ccu/year={year}/month={month}/day={day}/hour={hour}/",
+            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_game_ccu/year={year}/month={month}/day={day}/hour={hour}/",
+            "collect_time": f"{year}-{month}-{day} {hour}:00",
         },
     )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-testjob",
-        script_location="s3://de-2-1-bucket/source/script/glue_script.py",
+        job_name="de-2-1_game_ccu",
+        script_location="s3://de-2-1-bucket/source/script/glue_game_ccu_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
         dag=dag,
     )
 
-upload_script >> run_glue_job
+    wait_for_job = GlueJobSensor(  # trigger
+        task_id="wait_for_job_game_ccu_glue_job",  # task_id 직관적으로 알 수 있도록 변경 권장
+        job_name="de-2-1_game_ccu",
+        # Job ID extracted from previous Glue Job Operator task
+        run_id=run_glue_job.output,
+        verbose=True,  # prints glue job logs in airflow logs
+        # region_name="ap-northeast-2",
+        aws_conn_id="aws_conn_id",
+    )
+
+upload_script >> run_glue_job >> wait_for_job

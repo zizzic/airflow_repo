@@ -31,7 +31,7 @@ def upload_rendered_script_to_s3(
 
 
 with DAG(
-    "glue_test_dag",
+    "glue_live_viewer",
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
@@ -39,17 +39,17 @@ with DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
-    schedule_interval="0 * * * *",
     tags=["glue", "streaming"],
+    schedule_interval="0 * * * *",
     catchup=False,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.year.in_timezone('Asia/Seoul') }}"
-    month = "{{ data_interval_end.month.in_timezone('Asia/Seoul') }}"
-    day = "{{ data_interval_end.day.in_timezone('Asia/Seoul') }}"
-    hour = "{{ data_interval_end.hour.in_timezone('Asia/Seoul') }}"
+    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
+    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
+    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
 
     upload_script = PythonOperator(
         task_id="upload_script_to_s3",
@@ -57,8 +57,8 @@ with DAG(
         op_kwargs={
             "bucket_name": bucket_name,
             "aws_conn_id": "aws_conn_id",
-            "template_s3_key": "source/script/glue_template.py",
-            "rendered_s3_key": "source/script/glue_script.py",
+            "template_s3_key": "source/script/live_viewer_template.py",
+            "rendered_s3_key": "source/script/live_viewer_script.py",
             # into template
             "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
             "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
@@ -67,8 +67,8 @@ with DAG(
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
-        job_name="DE-2-1-testjob",
-        script_location="s3://de-2-1-bucket/source/script/glue_script.py",
+        job_name="de-2-1_live_viewer",  # when launch, plz clean&change glue jobs
+        script_location="s3://de-2-1-bucket/source/script/live_viewer_script.py",
         aws_conn_id="aws_conn_id",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
