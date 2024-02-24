@@ -4,6 +4,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
 
 from jinja2 import Template
 
@@ -74,5 +75,15 @@ with DAG(
         iam_role_name="AWSGlueServiceRole-crawler",
         dag=dag,
     )
+    wait_for_job = GlueJobSensor(  # trigger
+        task_id="wait_for_job_live_viewer_job",  # task_id 직관적으로 알 수 있도록 변경 권장
+        job_name="de-2-1_live_viewer",
+        # Job ID extracted from previous Glue Job Operator task
+        run_id=run_glue_job.output,
+        verbose=True,  # prints glue job logs in airflow logs
+        # region_name="ap-northeast-2",
+        aws_conn_id="aws_conn_id",
+    )
 
-upload_script >> run_glue_job
+
+upload_script >> run_glue_job >> wait_for_job
