@@ -31,10 +31,10 @@ def get_rating(app_id):
     if reviewdesc_short == []:
         return {
             "game_id": app_id,
-            "ALL_POSITIVE_NUM": 0,
-            "ALL_POSITIVE_PERCENT": 0,
-            "RECENT_POSITIVE_NUM": 0,
-            "RECENT_POSITIVE_PERCENT": 0,
+            "all_positive_num": 0,
+            "all_positive_percent": 0,
+            "recent_positive_num": 0,
+            "recent_positive_percent": 0,
         }
 
     recent_reviews = None
