@@ -58,7 +58,9 @@ def chzzk_raw(current_time, **kwargs):
             live_data = res.json()
             if not live_data["content"]["liveId"]:
                 time.sleep(5)
-                live_data = requests.get(f"https://api.chzzk.naver.com/service/v2/channels/{id}/live-detail").json()
+                live_data = requests.get(
+                    f"https://api.chzzk.naver.com/service/v2/channels/{id}/live-detail"
+                ).json()
             try:
                 live = live_data["content"]["status"]
                 if live == "OPEN":
