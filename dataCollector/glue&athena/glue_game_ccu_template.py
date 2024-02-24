@@ -1,7 +1,8 @@
 import sys
 
 from pyspark.context import SparkContext
-from pyspark.sql.functions import col, lit, explode
+from pyspark.sql.functions import col, lit, when, udf, explode
+from pyspark.sql.types import StringType
 
 from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
