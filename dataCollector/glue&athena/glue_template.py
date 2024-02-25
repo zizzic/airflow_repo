@@ -22,6 +22,14 @@ datasource = glueContext.create_dynamic_frame.from_options(
     format="json",
     transformation_ctx="datasource",
 )
+# <---------add functions----------->
+
+# "PLATFORM" 컬럼을 기준으로 파티션을 구성
+partitioned_df = result_df.repartition("PLATFORM")
+
+# 파티션된 Spark DataFrame을 DynamicFrame으로 변환
+partitioned_dynamic_frame = DynamicFrame.fromDF(partitioned_df, glueContext, "partitioned_dynamic_frame")
+
 
 # Parquet으로 변환하여 S3에 저장
 glueContext.write_dynamic_frame.from_options(
@@ -31,7 +39,3 @@ glueContext.write_dynamic_frame.from_options(
     format="parquet",
     transformation_ctx="datasource",
 )
-
-
-# Job Bookmark의 상태를 최종적으로 커밋
-job.commit()
