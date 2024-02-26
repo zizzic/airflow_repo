@@ -28,7 +28,9 @@ datasource = glueContext.create_dynamic_frame.from_options(
 partitioned_df = result_df.repartition("PLATFORM")
 
 # 파티션된 Spark DataFrame을 DynamicFrame으로 변환
-partitioned_dynamic_frame = DynamicFrame.fromDF(partitioned_df, glueContext, "partitioned_dynamic_frame")
+partitioned_dynamic_frame = DynamicFrame.fromDF(
+    partitioned_df, glueContext, "partitioned_dynamic_frame"
+)
 
 
 # Parquet으로 변환하여 S3에 저장

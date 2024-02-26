@@ -36,20 +36,21 @@ with DAG(
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 1, 17),
+        "start_date": datetime(2024, 2, 26),
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
     tags=["glue", "streaming"],
     schedule_interval="0 * * * *",
-    catchup=False,
+    catchup=True,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
-    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
-    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
-    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+
+    current_time = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
+    year = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').year }}"
+    month = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').month }}"
+    day = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
 
     upload_script = PythonOperator(

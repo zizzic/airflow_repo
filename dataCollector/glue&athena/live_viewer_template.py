@@ -36,6 +36,7 @@ afreeca_source = datasource_df.select("stream_data.afreeca").select(explode("afr
 chzzk_df = chzzk_source.select(
     col("col.streamer_id").alias("STREAMER_ID"),
     col("col.content.liveID").alias("BROADCAST_ID"),
+    col("col.current_time").alias("LIVE_COLLECT_TIME"),
     col("col.content.liveTitle").alias("BROADCAST_TITLE"),
     col("col.content.liveCategoryValue").alias("GAME_CODE"),
     col("col.content.concurrentUserCount").alias("VIEWER_NUM"),
@@ -48,6 +49,7 @@ chzzk_df = chzzk_df.withColumn("PLATFORM", lit("chzzk"))
 afreeca_df = afreeca_source.select(
     col("col.streamer_id").alias("STREAMER_ID"),
     col("col.live_status.BNO").alias("BROADCAST_ID"),
+    col("col.current_time").alias("LIVE_COLLECT_TIME"),
     col("col.live_status.TITLE").alias("BROADCAST_TITLE"),
     col("col.live_status.CATE").alias("GAME_CODE"),
     col("col.broad_info.broad.current_sum_viewer").alias("VIEWER_NUM"),
@@ -55,19 +57,7 @@ afreeca_df = afreeca_source.select(
 afreeca_df = afreeca_df.withColumn("PLATFORM", lit("afreeca"))
 # afreeca_df.show(truncate=False)
 
-
-result_df = chzzk_df.join(
-    afreeca_df,
-    [
-        "STREAMER_ID",
-        "BROADCAST_ID",
-        "BROADCAST_TITLE",
-        "GAME_CODE",
-        "PLATFORM",
-        "VIEWER_NUM",
-    ],
-    "outer",
-)
+result_df = chzzk_df.union(afreeca_df)
 
 # 스키마 정보를 로깅
 print("Schema Information:")
@@ -77,7 +67,9 @@ result_df.printSchema()
 partitioned_df = result_df.repartition("PLATFORM")
 
 # 파티션된 Spark DataFrame을 DynamicFrame으로 변환
-partitioned_dynamic_frame = DynamicFrame.fromDF(partitioned_df, glueContext, "partitioned_dynamic_frame")
+partitioned_dynamic_frame = DynamicFrame.fromDF(
+    partitioned_df, glueContext, "partitioned_dynamic_frame"
+)
 
 
 # Parquet으로 변환하여 S3에 저장
