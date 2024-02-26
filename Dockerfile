@@ -1,5 +1,5 @@
 # 기본 이미지 지정. 버전은 2.7.2
-FROM apache/airflow:2.7.2
+FROM apache/airflow:2.7.2-python3.11
 
 # root 사용자로 전환 (필요한 경우)
 USER root
