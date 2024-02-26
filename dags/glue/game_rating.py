@@ -37,12 +37,13 @@ with DAG(
         "owner": "airflow",
         "depends_on_past": False,
         "start_date": datetime(2024, 2, 22),
-        "retries": 0,
+        "retries": 3,
         "retry_delay": timedelta(minutes=5),
     },
+    max_active_runs=1,
     schedule_interval="0 1 * * *",
     tags=["glue", "Game_Rating"],
-    catchup=False,
+    catchup=True,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
