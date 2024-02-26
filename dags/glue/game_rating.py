@@ -38,7 +38,7 @@ with DAG(
         "depends_on_past": False,
         "start_date": datetime(2024, 2, 22),
         "retries": 3,
-        "retry_delay": timedelta(minutes=5),
+        "retry_delay": timedelta(seconds=15),
     },
     max_active_runs=1,
     schedule_interval="0 1 * * *",
