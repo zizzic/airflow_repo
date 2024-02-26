@@ -73,17 +73,18 @@ result_df = chzzk_df.join(
 print("Schema Information:")
 result_df.printSchema()
 
-dynamicframe = DynamicFrame.fromDF(result_df, glueContext, "dynamicframe")
+# "PLATFORM" 컬럼을 기준으로 파티션을 구성
+partitioned_df = result_df.repartition("PLATFORM")
+
+# 파티션된 Spark DataFrame을 DynamicFrame으로 변환
+partitioned_dynamic_frame = DynamicFrame.fromDF(partitioned_df, glueContext, "partitioned_dynamic_frame")
 
 
 # Parquet으로 변환하여 S3에 저장
 glueContext.write_dynamic_frame.from_options(
-    frame=dynamicframe,
+    frame=partitioned_dynamic_frame,
     connection_type="s3",
     connection_options={"path": "{{ output_path }}"},
     format="parquet",
     transformation_ctx="datasource",
 )
-
-# Job Bookmark의 상태를 최종적으로 커밋
-job.commit()
