@@ -36,9 +36,9 @@ with DAG(
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 2, 22),
+        "start_date": datetime(2024, 2, 27),
         "retries": 3,
-        "retry_delay": timedelta(minutes=5),
+        "retry_delay": timedelta(seconds=15),
     },
     max_active_runs=1,
     schedule_interval="5 * * * *",
@@ -47,10 +47,10 @@ with DAG(
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
-    current_time = "{{ data_interval_end.in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
-    year = "{{ data_interval_end.in_timezone('Asia/Seoul').year }}"
-    month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
-    day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
+    current_time = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').strftime('%Y-%m-%dT%H:%M:%S+00:00') }}"
+    year = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').year }}"
+    month = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').month }}"
+    day = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
 
     upload_script = PythonOperator(
