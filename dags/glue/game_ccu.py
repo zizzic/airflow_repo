@@ -36,7 +36,7 @@ with DAG(
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime(2024, 2, 27),
+        "start_date": datetime(2024, 2, 26),
         "retries": 3,
         "retry_delay": timedelta(seconds=15),
     },
