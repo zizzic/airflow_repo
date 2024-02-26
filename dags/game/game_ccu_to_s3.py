@@ -64,8 +64,8 @@ def get_ccu():
 
 # 3. API 응답들이 담긴 리스트를 JSON으로 저장
 @task
-def save_to_json(data):
-    data = {"raw_game_ccu": data}
+def save_to_json(data, collect_time):
+    data = {"raw_game_ccu": data, "collect_time": collect_time}
     result = json.dumps(data, ensure_ascii=False)
 
     return result
@@ -83,10 +83,7 @@ with DAG(
         "on_failure_callback": slack.on_failure_callback,
     },
 ) as dag:
-
-    data = get_ccu()
-    data_json = save_to_json(data)
-
+    
     bucket_name = "de-2-1-bucket"
 
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul') }}"
@@ -94,8 +91,13 @@ with DAG(
     month = "{{ data_interval_end.in_timezone('Asia/Seoul').month }}"
     day = "{{ data_interval_end.in_timezone('Asia/Seoul').day }}"
     hour = "{{ data_interval_end.in_timezone('Asia/Seoul').hour }}"
+    minutes = "{{ data_interval_end.in_timezone('Asia/Seoul').minute}}"
     table_name = "raw_game_ccu"
 
+    data = get_ccu()
+    collect_time = f"{year}-{month}-{day} {hour}:{minutes}"
+    data_json = save_to_json(data, collect_time)
+    
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=bucket_name,
