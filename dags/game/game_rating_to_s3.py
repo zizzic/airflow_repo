@@ -10,6 +10,7 @@ import slack
 import re
 import requests
 import json
+import time
 
 
 def connect_to_mysql():
@@ -23,12 +24,21 @@ def connect_to_mysql():
 # Game info 테이블에 있는 Game들의 app_id를 이용해 게임 정량 평가를 가져오는 함수
 def get_rating(app_id):
     url = f"https://store.steampowered.com/app/{app_id}"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
 
-    reviewdesc_short = soup.find_all("span", {"class": "responsive_reviewdesc_short"})
+    for i in range(3):
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    if reviewdesc_short == []:
+        reviewdesc_short = soup.find_all(
+            "span", {"class": "responsive_reviewdesc_short"}
+        )
+
+        if reviewdesc_short:
+            break
+
+        print(f"Retry {i+1} times for {app_id}")
+        time.sleep(90)
+    else:
         return {
             "game_id": app_id,
             "all_positive_num": 0,
