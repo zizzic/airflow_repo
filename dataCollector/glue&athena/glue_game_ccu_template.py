@@ -33,7 +33,7 @@ game_ccu_datasource = datasource.toDF()
 # 최상위 레벨의 key를 중심으로 explode하기
 df = game_ccu_datasource.select(
     explode(game_ccu_datasource.raw_game_ccu).alias("raw_game_ccu"),
-    col("collect_time").alias("COLLECT_TIME")
+    col("collect_time").alias("COLLECT_TIME"),
 )
 
 df = df.select(

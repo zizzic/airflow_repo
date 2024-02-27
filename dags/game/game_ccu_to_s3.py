@@ -83,7 +83,7 @@ with DAG(
         "on_failure_callback": slack.on_failure_callback,
     },
 ) as dag:
-    
+
     bucket_name = "de-2-1-bucket"
 
     current_time = "{{ data_interval_end.in_timezone('Asia/Seoul') }}"
@@ -97,7 +97,7 @@ with DAG(
     data = get_ccu()
     collect_time = f"{year}-{month}-{day} {hour}:{minutes}"
     data_json = save_to_json(data, collect_time)
-    
+
     task_load_raw_data = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=bucket_name,

@@ -165,6 +165,7 @@ def delete_file(file_path):
         os.remove(file_path)
         # print(f"Deleted {file_path}")
 
+
 # when change file_names => plz check delete func!!
 def delete_files(**kwargs):
     # 플랫폼별로 파일 삭제

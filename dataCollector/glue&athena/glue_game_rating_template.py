@@ -36,7 +36,7 @@ df = game_rating_datasource.select(
 
 df = df.select(
     col("raw_game_rating.game_id").alias("GAME_ID"),
-    lit("{{ collect_time }}").alias("COLLECT_DATE"),
+    lit("{{ collect_date }}").alias("COLLECT_DATE"),
     col("raw_game_rating.recent_positive_num").alias("RECENT_POSITIVE_NUM"),
     col("raw_game_rating.recent_positive_percent").alias("RECENT_POSITIVE_PERCENT"),
     col("raw_game_rating.all_positive_num").alias("ALL_POSITIVE_NUM"),
