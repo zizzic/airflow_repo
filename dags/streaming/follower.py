@@ -165,12 +165,12 @@ def delete_file(file_path):
         os.remove(file_path)
         # print(f"Deleted {file_path}")
 
-
+# when change file_names => plz check delete func!!
 def delete_files(**kwargs):
     # 플랫폼별로 파일 삭제
     platforms = ["afc", "chzzk"]
     for platform in platforms:
-        file_path = f"./{platform}_{current_time}.json"
+        file_path = f"./{platform}_f_{current_time}.json"  # this part you will change
         delete_file(file_path)
 
     # local_path를 사용하여 파일 삭제
