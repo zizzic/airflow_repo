@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+
+# from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
@@ -51,18 +52,18 @@ with DAG(
     month = "{{ (data_interval_end - macros.timedelta(days=1)).in_timezone('Asia/Seoul').month }}"
     day = "{{ (data_interval_end - macros.timedelta(days=1)).in_timezone('Asia/Seoul').day }}"
 
-    upload_script = PythonOperator(
-        task_id="upload_script_to_s3",
-        python_callable=upload_rendered_script_to_s3,
-        op_kwargs={
-            "bucket_name": bucket_name,
-            "aws_conn_id": "aws_conn_id",
-            "template_s3_key": "source/script/glue_followers_template.py",
-            "rendered_s3_key": "source/script/glue_followers_script.py",
-            "input_path": f"s3://de-2-1-bucket/source/json/table_name=followers/year={year}/month={month}/day={day}/",
-            "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=followers/year={year}/month={month}/day={day}/",
-        },
-    )
+    # upload_script = PythonOperator(
+    #     task_id="upload_script_to_s3",
+    #     python_callable=upload_rendered_script_to_s3,
+    #     op_kwargs={
+    #         "bucket_name": bucket_name,
+    #         "aws_conn_id": "aws_conn_id",
+    #         "template_s3_key": "source/script/glue_followers_template.py",
+    #         "rendered_s3_key": "source/script/glue_followers_script.py",
+    #         "input_path": f"s3://de-2-1-bucket/source/json/table_name=followers/year={year}/month={month}/day={day}/",
+    #         "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=followers/year={year}/month={month}/day={day}/",
+    #     },
+    # )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
@@ -72,7 +73,12 @@ with DAG(
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-crawler",
         dag=dag,
+        script_args={  # ~script.py에서 사용할 인자들을 정의
+            "--input_path": f"s3://de-2-1-bucket/source/json/table_name=followers/year={year}/month={month}/day={day}/",
+            "--output_path": f"s3://de-2-1-bucket/source/parquet/table_name=followers/year={year}/month={month}/day={day}/",
+        },
     )
+
     wait_for_job = GlueJobSensor(  # trigger
         task_id="wait_for_job_followers_job",  # task_id 직관적으로 알 수 있도록 변경 권장
         job_name="de-2-1_followers",
@@ -82,4 +88,4 @@ with DAG(
     )
 
 
-upload_script >> run_glue_job >> wait_for_job
+run_glue_job >> wait_for_job
