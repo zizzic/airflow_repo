@@ -53,6 +53,7 @@ def get_ccu():
                     break
             else:
                 print(f"Failed to get CCU of {game}!")
+                temp = {"player_count": 0, "result": 0, "game_id": appid}
         else:
             temp["game_id"] = appid
             data.append(temp)  # API 응답을 리스트에 추가
