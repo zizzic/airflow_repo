@@ -41,6 +41,7 @@ with DAG(
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
     },
+    max_active_runs=1,
     tags=["glue", "streaming"],
     schedule_interval="30 16 * * *",  # 한국 기준 새벽 1시 30분
     catchup=True,
