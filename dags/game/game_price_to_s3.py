@@ -67,7 +67,7 @@ def get_price():
             temp = {
                 "success": False,
                 "data": {
-                    "steam_appid": appid,
+                    "steam_appid": int(appid),
                     "price_overview": {
                         "final": 999999999,
                         "initial": 999999999,
