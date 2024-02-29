@@ -95,18 +95,15 @@ def afreeca_raw(current_time, **kwargs):
             broad_res = get_broad_info(bjid, headers)
 
             try:
-                broad_info = broad_res.get("broad")
+                combined_res = {"broad_info": broad_res}
 
-                if broad_info:
-                    combined_res = {"broad_info": broad_res}
-
-                    stream_data = {
-                        "streamer_id": s_id,
-                        "afc_s_id": bjid,
-                        "current_time": current_time,
-                        **combined_res,
-                    }
-                    live_stream_data.append(stream_data)
+                stream_data = {
+                    "streamer_id": s_id,
+                    "afc_s_id": bjid,
+                    "current_time": current_time,
+                    **combined_res,
+                }
+                live_stream_data.append(stream_data)
 
             except (AttributeError, TypeError) as e:
                 error_msg = f"Error occurred: {str(e)}"
