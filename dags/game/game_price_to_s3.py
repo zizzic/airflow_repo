@@ -63,14 +63,18 @@ def get_price():
             else:
                 print(f"Failed to get price of {appid, name}!")
 
-        if not temp:
+        if not temp or not temp[appid]["success"]:
             temp = {
-                appid: {
-                    "success": False,
-                    "data": {
-                        "price_overview": {"final": 999999999, "initial": 999999999}
+                "success": False,
+                "data": {
+                    "steam_appid": appid,
+                    "price_overview": {
+                        "final": 999999999,
+                        "initial": 999999999,
+                        "discount_percent": 0,
+                        "final_formatted": "₩ 999,999,999",
                     },
-                }
+                },
             }
         else:
             temp = temp[appid]
