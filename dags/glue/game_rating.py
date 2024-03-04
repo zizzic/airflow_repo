@@ -42,7 +42,7 @@ with DAG(
         "retry_delay": timedelta(seconds=15),
     },
     max_active_runs=1,
-    schedule_interval="0 16 * * *",
+    schedule_interval="0 16 * * *", # 한국시간 새벽 1시
     tags=["glue", "Game_Rating"],
     catchup=True,
 ) as dag:

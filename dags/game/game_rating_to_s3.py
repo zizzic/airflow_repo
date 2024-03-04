@@ -126,7 +126,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["Steam_API"],
-    schedule_interval="10 15 * * *",
+    schedule_interval="10 15 * * *", # 한국시간 새벽 00시 10분
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=1),

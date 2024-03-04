@@ -43,7 +43,7 @@ with DAG(
     },
     max_active_runs=1,
     tags=["glue", "streaming"],
-    schedule_interval="0 16 * * *",  # 한국 기준 오전 10시
+    schedule_interval="0 16 * * *", # 한국시간 새벽 1시
     catchup=True,
 ) as dag:
 
