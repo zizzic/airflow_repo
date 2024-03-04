@@ -80,7 +80,7 @@ with DAG(
 
     glue_crawler_config = {
         "Name": "de-2-1-raw_game_ccu",
-        "Role": Variable.get("glue_crawler_arn"),
+        "Role": Variable.get("glue_crawler_arn_secret"),
         "DatabaseName": "de_2_1_glue",
         "Targets": {
             "S3Targets": [
