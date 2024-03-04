@@ -6,6 +6,7 @@ from airflow import DAG
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
+from airflow.sensors.time_delta_sensor import TimeDeltaSensor
 
 from jinja2 import Template
 
@@ -38,7 +39,7 @@ with DAG(
         "owner": "airflow",
         "depends_on_past": False,
         "start_date": datetime(2024, 2, 26),
-        "retries": 0,
+        "retries": 1,
         "retry_delay": timedelta(minutes=5),
     },
     tags=["glue", "streaming"],
@@ -54,20 +55,6 @@ with DAG(
     month = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').month }}"
     day = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
-
-    # upload_script = PythonOperator(
-    #     task_id="upload_script_to_s3",
-    #     python_callable=upload_rendered_script_to_s3,
-    #     op_kwargs={
-    #         "bucket_name": bucket_name,
-    #         "aws_conn_id": "aws_conn_id",
-    #         "template_s3_key": "source/script/live_viewer_template.py",
-    #         "rendered_s3_key": "source/script/live_viewer_script.py",
-    #         # into template
-    #         "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
-    #         "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/year={year}/month={month}/day={day}/hour={hour}/",
-    #     },
-    # )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
@@ -90,6 +77,9 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
+    wait_30_seconds = TimeDeltaSensor(
+        task_id= 'wait_30_seconds',
+        delta=timedelta(seconds=30),
+    )
 
-
-run_glue_job >> wait_for_job
+run_glue_job >> wait_for_job >> wait_30_seconds
