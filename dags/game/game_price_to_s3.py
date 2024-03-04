@@ -100,7 +100,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["Steam_API"],
-    schedule_interval="0 0 * * *",
+    schedule_interval="10 15 * * *",
     default_args={
         "retries": 3,
         "retry_delay": timedelta(seconds=15),
