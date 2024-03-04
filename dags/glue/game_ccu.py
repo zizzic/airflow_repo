@@ -46,7 +46,7 @@ with DAG(
     max_active_runs=1,
     schedule_interval="5 * * * *",
     tags=["glue", "Game_CCU"],
-    catchup=False,
+    catchup=True,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
