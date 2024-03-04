@@ -77,9 +77,9 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
-    wait_30_seconds = TimeDeltaSensor(
+    wait_60_seconds = TimeDeltaSensor(
         task_id= 'wait_30_seconds',
-        delta=timedelta(seconds=30),
+        delta=timedelta(seconds=60),
     )
 
-run_glue_job >> wait_for_job >> wait_30_seconds
+run_glue_job >> wait_for_job >> wait_60_seconds
