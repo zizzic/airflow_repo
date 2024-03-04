@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+import time
 
 from airflow import DAG
 
-# from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
@@ -10,6 +11,8 @@ from airflow.sensors.time_delta_sensor import TimeDeltaSensor
 
 from jinja2 import Template
 
+def sleep_for_60_seconds():
+    time.sleep(60)
 
 def upload_rendered_script_to_s3(
     bucket_name, template_s3_key, rendered_s3_key, aws_conn_id, **kwargs
@@ -77,9 +80,10 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
-    wait_60_seconds = TimeDeltaSensor(
-        task_id= 'wait_30_seconds',
-        delta=timedelta(seconds=60),
+    sleep_task = PythonOperator(
+        task_id='sleep_for_60_seconds',
+        python_callable=sleep_for_60_seconds,
+        dag=dag,
     )
 
-run_glue_job >> wait_for_job >> wait_60_seconds
+run_glue_job >> wait_for_job >> sleep_task
