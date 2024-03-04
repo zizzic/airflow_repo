@@ -44,7 +44,7 @@ with DAG(
         "retry_delay": timedelta(seconds=15),
     },
     max_active_runs=1,
-    schedule_interval="5 * * * *",
+    schedule="5 * * * *",
     tags=["glue", "Game_CCU"],
     catchup=True,
 ) as dag:
@@ -84,9 +84,7 @@ with DAG(
         "DatabaseName": "de_2_1_glue",
         "Targets": {
             "S3Targets": [
-                {
-                    "Path": "s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/"
-                }
+                {"Path": "s3://de-2-1-bucket/source/parquet/table_name=raw_game_ccu/"}
             ]
         },
     }
