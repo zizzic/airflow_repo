@@ -8,6 +8,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.sql.functions import *
 from awsglue.dynamicframe import DynamicFrame
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType
 
 # SparkContext와 GlueContext 초기화
 sc = SparkContext()
@@ -29,40 +30,51 @@ datasource = glueContext.create_dynamic_frame.from_options(
     format="json",
     transformation_ctx="datasource",
 )
+
+# 공통 스키마 정의
+common_schema = StructType([
+    StructField("STREAMER_ID", StringType(), True),
+    StructField("BROADCAST_ID", StringType(), True),
+    StructField("LIVE_COLLECT_TIME", TimestampType(), True),
+    StructField("BROADCAST_TITLE", StringType(), True),
+    StructField("GAME_CODE", StringType(), True),
+    StructField("VIEWER_NUM", IntegerType(), True),
+    StructField("PLATFORM", StringType(), True),
+])
+
 # 데이터 가공
 datasource_df = datasource.toDF()
+try:
+    chzzk_source = datasource_df.select("stream_data.chzzk").select(explode("chzzk"))
+    # chzzk_source.printSchema()
+    chzzk_df = chzzk_source.select(
+        col("col.streamer_id").alias("STREAMER_ID"),
+        col("col.content.liveID").alias("BROADCAST_ID"),
+        col("col.current_time").alias("LIVE_COLLECT_TIME"),
+        col("col.content.liveTitle").alias("BROADCAST_TITLE"),
+        col("col.content.liveCategoryValue").alias("GAME_CODE"),
+        col("col.content.concurrentUserCount").alias("VIEWER_NUM"),
+    )
+    chzzk_df = chzzk_df.withColumn("PLATFORM", lit("chzzk"))
+except:
+    chzzk_df = spark.createDataFrame([],schema = common_schema)
 
-chzzk_source = datasource_df.select("stream_data.chzzk").select(explode("chzzk"))
-afreeca_source = datasource_df.select("stream_data.afreeca").select(explode("afreeca"))
+try:
+    afreeca_source = datasource_df.select("stream_data.afreeca").select(explode("afreeca"))
+    afreeca_df = afreeca_source.select(
+        col("col.streamer_id").alias("STREAMER_ID"),
+        col("col.live_status.BNO").alias("BROADCAST_ID"),
+        col("col.current_time").alias("LIVE_COLLECT_TIME"),
+        col("col.live_status.TITLE").alias("BROADCAST_TITLE"),
+        col("col.live_status.CATE").alias("GAME_CODE"),
+        col("col.broad_info.broad.current_sum_viewer").alias("VIEWER_NUM"),
+    )
+    afreeca_df = afreeca_df.withColumn("PLATFORM", lit("afreeca"))
+except:
+    afreeca_df = spark.createDataFrame([], schema=common_schema)
 
-# chzzk_source.printSchema()
-chzzk_df = chzzk_source.select(
-    col("col.streamer_id").alias("STREAMER_ID"),
-    col("col.content.liveID").alias("BROADCAST_ID"),
-    col("col.current_time").alias("LIVE_COLLECT_TIME"),
-    col("col.content.liveTitle").alias("BROADCAST_TITLE"),
-    col("col.content.liveCategoryValue").alias("GAME_CODE"),
-    col("col.content.concurrentUserCount").alias("VIEWER_NUM"),
-)
-# add platform
-chzzk_df = chzzk_df.withColumn("PLATFORM", lit("chzzk"))
-# chzzk_df.show()
-
-# afreeca_source.printSchema()
-afreeca_df = afreeca_source.select(
-    col("col.streamer_id").alias("STREAMER_ID"),
-    col("col.live_status.BNO").alias("BROADCAST_ID"),
-    col("col.current_time").alias("LIVE_COLLECT_TIME"),
-    col("col.live_status.TITLE").alias("BROADCAST_TITLE"),
-    col("col.live_status.CATE").alias("GAME_CODE"),
-    col("col.broad_info.broad.current_sum_viewer").alias("VIEWER_NUM"),
-)
-afreeca_df = afreeca_df.withColumn("PLATFORM", lit("afreeca"))
-# afreeca_df.show(truncate=False)
 
 result_df = chzzk_df.union(afreeca_df)
-
-result_df = result_df.withColumn("GAME_CODE", when(col("GAME_CODE").isNull(), lit("talk")).otherwise(col("GAME_CODE")))
 
 # 스키마 정보를 로깅
 print("Schema Information:")
