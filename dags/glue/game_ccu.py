@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import Variable
 
 # from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
@@ -44,7 +46,7 @@ with DAG(
     max_active_runs=1,
     schedule_interval="5 * * * *",
     tags=["glue", "Game_CCU"],
-    catchup=True,
+    catchup=False,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
@@ -53,20 +55,6 @@ with DAG(
     month = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').month }}"
     day = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').day }}"
     hour = "{{ (data_interval_end - macros.timedelta(hours=1)).in_timezone('Asia/Seoul').hour }}"  # before 1 hour
-
-    # upload_script = PythonOperator(
-    #     task_id="upload_script_to_s3",
-    #     python_callable=upload_rendered_script_to_s3,
-    #     op_kwargs={
-    #         "bucket_name": bucket_name,
-    #         "aws_conn_id": "aws_conn_id",
-    #         "template_s3_key": "source/script/glue_game_ccu_template.py",
-    #         "rendered_s3_key": "source/script/glue_game_ccu_script.py",
-    #         # into template
-    #         "input_path": f"s3://de-2-1-bucket/source/json/table_name=raw_game_ccu/year={year}/month={month}/day={day}/hour={hour}/",
-    #         "output_path": f"s3://de-2-1-bucket/source/parquet/table_name=raw_game_ccu/year={year}/month={month}/day={day}/hour={hour}/",
-    #     },
-    # )
 
     run_glue_job = GlueJobOperator(
         task_id="run_glue_job",
@@ -90,5 +78,23 @@ with DAG(
         aws_conn_id="aws_conn_id",
     )
 
+    glue_crawler_config = {
+        "Name": "de-2-1-raw_game_ccu",
+        "Role": Variable.get("glue_crawler_arn"),
+        "DatabaseName": "de_2_1_glue",
+        "Targets": {
+            "S3Targets": [
+                {
+                    "Path": "s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/"
+                }
+            ]
+        },
+    }
+
+    crawl_s3 = GlueCrawlerOperator(
+        task_id="crawl_s3",
+        config=glue_crawler_config,
+        aws_conn_id="aws_conn_id",
+    )
 # upload_script >> run_glue_job >> wait_for_job
-run_glue_job >> wait_for_job
+run_glue_job >> wait_for_job >> crawl_s3
