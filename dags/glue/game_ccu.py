@@ -77,10 +77,10 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
-
+    glue_crawler_arn = Variable.get("glue_crawler_arn_secret")
     glue_crawler_config = {
         "Name": "de-2-1-raw_game_ccu",
-        "Role": Variable.get("glue_crawler_arn_secret"),
+        "Role": glue_crawler_arn,
         "DatabaseName": "de_2_1_glue",
         "Targets": {
             "S3Targets": [
