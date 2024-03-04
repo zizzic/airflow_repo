@@ -46,8 +46,11 @@ common_schema = StructType([
 datasource_df = datasource.toDF()
 try:
     chzzk_source = datasource_df.select("stream_data.chzzk").select(explode("chzzk"))
+
+    chz_filtered_source = chzzk_source.filter(col("col.content.adult") == 'false')
+
     # chzzk_source.printSchema()
-    chzzk_df = chzzk_source.select(
+    chzzk_df = chz_filtered_source.select(
         col("col.streamer_id").alias("STREAMER_ID"),
         col("col.content.liveID").alias("BROADCAST_ID"),
         col("col.current_time").alias("LIVE_COLLECT_TIME"),
@@ -61,7 +64,9 @@ except:
 
 try:
     afreeca_source = datasource_df.select("stream_data.afreeca").select(explode("afreeca"))
-    afreeca_df = afreeca_source.select(
+    afc_filtered_source = afreeca_source.filter(col("col.broad_info.broad.broad_grade") < 19)
+
+    afreeca_df = afc_filtered_source.select(
         col("col.streamer_id").alias("STREAMER_ID"),
         col("col.live_status.BNO").alias("BROADCAST_ID"),
         col("col.current_time").alias("LIVE_COLLECT_TIME"),
