@@ -44,6 +44,7 @@ with DAG(
     tags=["glue", "streaming"],
     schedule_interval="0 * * * *",
     catchup=True,
+    max_active_runs=1
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
