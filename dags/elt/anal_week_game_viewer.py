@@ -79,7 +79,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["ELT", "analytics", "game_viewer"],
-    schedule_interval="0 0 * * *",  # 매일 자정
+    schedule_interval="0 23 * * *",  # 매일 자정
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
