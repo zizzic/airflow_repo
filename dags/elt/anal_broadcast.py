@@ -81,6 +81,7 @@ def elt():
             LEFT JOIN external_raw_data.streamer_info AS s_info ON s_info.streamer_id = g_ids.streamer_id
             LEFT JOIN external_raw_data.game_info AS g_info
             ON g_ids.n_game_code = g_info.chz_game_code OR LTRIM(g_ids.n_game_code, '0') = g_info.afc_game_code
+            WHERE g_ids.broadcast_id IS NOT NULL AND g_ids.parsed_time::DATE - 1 >= (CURRENT_DATE - 8)
             GROUP BY STREAMER_NM, BROADCAST_ID, GAME_NM, PLATFORM, g_ids.group_id, g_ids.n_game_code
             ORDER BY STREAMER_NM, BROADCAST_ID, start_time; 
             """
@@ -108,8 +109,8 @@ with DAG(
     dag_id="ELT_ANAL_BROADCAST",
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=["ELT", "analytics", "game_ccu"],
-    schedule_interval="0 2 * * *",  # 매일 11시
+    tags=["ELT", "analytics", "broadcast"],
+    schedule_interval="0 22 * * *",  # 매일 11시
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
