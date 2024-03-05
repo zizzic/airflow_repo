@@ -27,14 +27,14 @@ def elt():
 
         # analytics.ANAL_YSD_GAME_CCU 테이블의 모든 데이터 삭제
         sql = """
-                DELETE FROM analytics.ANAL_YSD_GAME_RATING;
+                DELETE FROM analytics.ANAL_TDY_GAME_RATING;
                 """
         cur.execute(sql)
-        print("Successfully deleted all data from analytics.ANAL_YSD_GAME_RATING")
+        print("Successfully deleted all data from analytics.ANAL_TDY_GAME_RATING")
 
         # SELECT 쿼리의 결과를 analytics.ANAL_YSD_GAME_CCU 테이블에 삽입
         sql = """
-            INSERT INTO analytics.ANAL_YSD_GAME_RATING(GAME_NM, POSITIVE_PERCENT, CREATED_DATE)
+            INSERT INTO analytics.ANAL_TDY_GAME_RATING(GAME_NM, POSITIVE_PERCENT, CREATED_DATE)
             SELECT
                 b.game_nm AS GAME_NM,
                 (a.all_positive_percent)*0.05 AS POSITIVE_PERCENT,
@@ -46,7 +46,7 @@ def elt():
             ON a.game_id = b.game_id ;
             """
         cur.execute(sql)
-        print("Successfully inserted data into analytics.ANAL_YSD_GAME_RATING")
+        print("Successfully inserted data into analytics.ANAL_TDY_GAME_RATING")
 
         # 트랜잭션 commit
         conn.commit()
@@ -66,7 +66,7 @@ def elt():
 
 
 with DAG(
-    dag_id="ELT_ANAL_YSD_GAME_RATING",
+    dag_id="ELT_ANAL_TDY_GAME_RATING",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["ELT", "analytics", "game_rating"],
