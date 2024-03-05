@@ -35,7 +35,7 @@ def elt():
         # SELECT 쿼리의 결과를 analytics.anal_week_game_viewer 테이블에 삽입
         sql = """
             INSERT INTO analytics.anal_week_game_viewer
-            SELECT GAME_NM, HOUR, si.streamer_nm as STREAMER_NM, AVG(viewer_num) AS VIEWER_AVG, TO_CHAR(live_collect_time::DATE, 'YYYY-MM-DD') AS CREATED_DATE
+            SELECT GAME_NM, CAST(HOUR AS INTEGER), si.streamer_nm as STREAMER_NM, AVG(viewer_num) AS VIEWER_AVG, TO_DATE(TO_CHAR(live_collect_time::DATE, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CREATED_DATE
             FROM (
                 SELECT gi.game_nm ,rlv.game_code, rlv.live_collect_time, rlv.viewer_num, rlv.year, rlv.month, rlv.day, rlv.hour, rlv.streamer_id
                 FROM external_raw_data.table_name_raw_live_viewer AS rlv
