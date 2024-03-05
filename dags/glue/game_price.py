@@ -93,6 +93,7 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
+
     glue_crawler_arn = Variable.get("glue_crawler_arn_secret")
     glue_crawler_config = {
         "Name": "de-2-1-raw_game_price",
@@ -110,5 +111,5 @@ with DAG(
         config=glue_crawler_config,
         aws_conn_id="aws_conn_id",
     )
-# upload_script >> run_glue_job >> wait_for_job
+
 run_glue_job >> wait_for_job >> crawl_s3
