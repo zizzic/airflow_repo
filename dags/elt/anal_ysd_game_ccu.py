@@ -41,7 +41,7 @@ def elt():
                 current_date AS CREATED_DATE
             FROM (SELECT GAME_ID, GAME_CCU
                 FROM external_raw_data.table_name_raw_game_ccu
-                WHERE CAST(collect_time AS timestamp) 
+                WHERE CAST(collect_time AS timestamp)
                     BETWEEN GETDATE() - INTERVAL '1 day' + INTERVAL '6 hours'
                 AND GETDATE() + INTERVAL '6 hours') a
             JOIN external_raw_data.game_info b

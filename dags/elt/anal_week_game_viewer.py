@@ -41,6 +41,7 @@ def elt():
                 FROM external_raw_data.table_name_raw_live_viewer AS rlv
                 INNER JOIN external_raw_data.game_info AS gi
                 ON rlv.game_code = gi.chz_game_code
+                WHERE gi.chz_game_code <> ''
 
                 UNION
 
@@ -48,6 +49,7 @@ def elt():
                 FROM external_raw_data.table_name_raw_live_viewer AS rlv
                 INNER JOIN external_raw_data.game_info AS gi
                 ON rlv.game_code = LPAD(gi.afc_game_code, LENGTH(gi.afc_game_code) + 3, '0')
+                WHERE gi.afc_game_code <> ''
             ) AS subquery
             INNER JOIN external_raw_data.streamer_info AS si
             ON subquery.streamer_id = si.streamer_id
