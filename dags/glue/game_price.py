@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import Variable
 
 # from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
@@ -42,7 +44,7 @@ with DAG(
         "retry_delay": timedelta(seconds=15),
     },
     max_active_runs=1,
-    schedule_interval="0 16 * * *", # 한국시간 새벽 1시
+    schedule_interval="0 16 * * *",  # 한국시간 새벽 1시
     tags=["glue", "Game_Price"],
     catchup=True,
 ) as dag:
@@ -92,5 +94,22 @@ with DAG(
         aws_conn_id="aws_conn_id",
     )
 
-# upload_script >> run_glue_job >> wait_for_job
-run_glue_job >> wait_for_job
+    glue_crawler_arn = Variable.get("glue_crawler_arn_secret")
+    glue_crawler_config = {
+        "Name": "de-2-1-raw_game_price",
+        "Role": glue_crawler_arn,
+        "DatabaseName": "de_2_1_glue",
+        "Targets": {
+            "S3Targets": [
+                {"Path": "s3://de-2-1-bucket/source/parquet/table_name=raw_game_price/"}
+            ]
+        },
+    }
+
+    crawl_s3 = GlueCrawlerOperator(
+        task_id="crawl_s3",
+        config=glue_crawler_config,
+        aws_conn_id="aws_conn_id",
+    )
+
+run_glue_job >> wait_for_job >> crawl_s3
