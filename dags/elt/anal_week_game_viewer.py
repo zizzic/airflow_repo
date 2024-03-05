@@ -37,7 +37,7 @@ def elt():
             INSERT INTO analytics.anal_week_game_viewer
             SELECT GAME_NM, CAST(HOUR AS INTEGER), si.streamer_nm as STREAMER_NM, AVG(viewer_num) AS VIEWER_AVG, TO_DATE(TO_CHAR(live_collect_time::DATE, 'YYYY-MM-DD'), 'YYYY-MM-DD') AS CREATED_DATE
             FROM (
-                SELECT gi.game_nm ,rlv.game_code, rlv.live_collect_time, rlv.viewer_num, rlv.year, rlv.month, rlv.day, rlv.hour, rlv.streamer_id
+                SELECT gi.game_nm ,rlv.game_code, rlv.live_collect_time, rlv.viewer_num, rlv.year, rlv.month, rlv.day, CAST(rlv.hour AS INTEGER), rlv.streamer_id
                 FROM external_raw_data.table_name_raw_live_viewer AS rlv
                 INNER JOIN external_raw_data.game_info AS gi
                 ON rlv.game_code = gi.chz_game_code
@@ -45,7 +45,7 @@ def elt():
 
                 UNION
 
-                SELECT gi.game_nm, rlv.game_code, rlv.live_collect_time, rlv.viewer_num, rlv.year, rlv.month, rlv.day, rlv.hour, rlv.streamer_id
+                SELECT gi.game_nm, rlv.game_code, rlv.live_collect_time, rlv.viewer_num, rlv.year, rlv.month, rlv.day, CAST(rlv.hour AS INTEGER), rlv.streamer_id
                 FROM external_raw_data.table_name_raw_live_viewer AS rlv
                 INNER JOIN external_raw_data.game_info AS gi
                 ON rlv.game_code = LPAD(gi.afc_game_code, LENGTH(gi.afc_game_code) + 3, '0')
