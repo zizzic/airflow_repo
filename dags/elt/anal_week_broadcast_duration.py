@@ -68,7 +68,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["ELT", "analytics", "broadcast"],
-    schedule_interval="0 2 * * *",  # 11:00(KST)
+    schedule_interval="0 23 * * *",  # 08:00(KST)
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
