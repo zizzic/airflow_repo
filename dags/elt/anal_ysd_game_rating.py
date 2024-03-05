@@ -70,7 +70,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["ELT", "analytics", "game_rating"],
-    schedule_interval="0 2 * * *",  # 매일 11시
+    schedule_interval="0 22 * * *",  # 매일 7시
     default_args={
         "retries": 3,
         "retry_delay": timedelta(minutes=5),
