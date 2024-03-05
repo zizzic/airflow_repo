@@ -35,7 +35,7 @@ def elt():
         # SELECT 쿼리의 결과를 analytics.ANAL_YSD_GAME_CCU 테이블에 삽입
         sql = """
             INSERT INTO analytics.ANAL_YSD_GAME_RATING(GAME_NM, POSITIVE_PERCENT, CREATED_DATE)
-            SELECT 
+            SELECT
                 b.game_nm AS GAME_NM,
                 (a.all_positive_percent)*0.05 AS POSITIVE_PERCENT,
                 current_date AS CREATED_DATE

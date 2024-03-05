@@ -35,7 +35,7 @@ def elt():
         # SELECT 쿼리의 결과를 analytics.anal_week_game_viewer 테이블에 삽입
         sql = """
             INSERT INTO analytics.anal_week_broadcast_freq(GAME_NM, STREAMER_NM, BROADCAST_FREQ, CREATED_DATE)
-            select 
+            select
                 game_nm AS GAME_NM,
                 streamer_nm AS STREAMER_NM,
                 COUNT(distinct broadcast_id) AS BROADCAST_FREQ,

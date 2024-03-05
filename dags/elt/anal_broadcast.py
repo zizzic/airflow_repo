@@ -40,7 +40,7 @@ def elt():
                 FROM external_raw_data.table_name_raw_live_viewer
             ),
             RankedData AS(
-                SELECT 
+                SELECT
                     *,
                     LAG(parsed_time, 1) OVER (
                         PARTITION BY streamer_id, broadcast_id, game_code
@@ -83,9 +83,9 @@ def elt():
             ON g_ids.n_game_code = g_info.chz_game_code OR LTRIM(g_ids.n_game_code, '0') = g_info.afc_game_code
             WHERE g_ids.broadcast_id IS NOT NULL
                 AND g_ids.parsed_time >= (CURRENT_DATE - INTERVAL '7 days' + INTERVAL '6 hours')
-                AND g_ids.parsed_time < (CURRENT_DATE + INTERVAL '6 hours')    
+                AND g_ids.parsed_time < (CURRENT_DATE + INTERVAL '6 hours')
             GROUP BY STREAMER_NM, BROADCAST_ID, GAME_NM, PLATFORM, g_ids.group_id, g_ids.n_game_code
-            ORDER BY STREAMER_NM, BROADCAST_ID, start_time; 
+            ORDER BY STREAMER_NM, BROADCAST_ID, start_time;
             """
         cur.execute(sql)
         print("Successfully inserted data into analytics.ANAL_BROADCAST")

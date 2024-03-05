@@ -8,7 +8,13 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from pyspark.sql.functions import *
 from awsglue.dynamicframe import DynamicFrame
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    StringType,
+    IntegerType,
+    TimestampType,
+)
 
 # SparkContext와 GlueContext 초기화
 sc = SparkContext()
@@ -17,11 +23,11 @@ spark = glueContext.spark_session
 
 # Job 초기화 (Job Bookmark 활성화 포함)
 job = Job(glueContext)
-args = getResolvedOptions(sys.argv, ['JOB_NAME', 'input_path', 'output_path'])
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "input_path", "output_path"])
 job.init(args["JOB_NAME"], args)
 
-input_path = args['input_path']
-output_path = args['output_path']
+input_path = args["input_path"]
+output_path = args["output_path"]
 
 # S3에서 데이터를 읽어오는 부분
 datasource = glueContext.create_dynamic_frame.from_options(
@@ -32,22 +38,24 @@ datasource = glueContext.create_dynamic_frame.from_options(
 )
 
 # 공통 스키마 정의
-common_schema = StructType([
-    StructField("STREAMER_ID", StringType(), True),
-    StructField("BROADCAST_ID", StringType(), True),
-    StructField("LIVE_COLLECT_TIME", TimestampType(), True),
-    StructField("BROADCAST_TITLE", StringType(), True),
-    StructField("GAME_CODE", StringType(), True),
-    StructField("VIEWER_NUM", IntegerType(), True),
-    StructField("PLATFORM", StringType(), True),
-])
+common_schema = StructType(
+    [
+        StructField("STREAMER_ID", StringType(), True),
+        StructField("BROADCAST_ID", StringType(), True),
+        StructField("LIVE_COLLECT_TIME", TimestampType(), True),
+        StructField("BROADCAST_TITLE", StringType(), True),
+        StructField("GAME_CODE", StringType(), True),
+        StructField("VIEWER_NUM", IntegerType(), True),
+        StructField("PLATFORM", StringType(), True),
+    ]
+)
 
 # 데이터 가공
 datasource_df = datasource.toDF()
 try:
     chzzk_source = datasource_df.select("stream_data.chzzk").select(explode("chzzk"))
 
-    chz_filtered_source = chzzk_source.filter(col("col.content.adult") == 'false')
+    chz_filtered_source = chzzk_source.filter(col("col.content.adult") == "false")
 
     # chzzk_source.printSchema()
     chzzk_df = chz_filtered_source.select(
@@ -60,11 +68,15 @@ try:
     )
     chzzk_df = chzzk_df.withColumn("PLATFORM", lit("chzzk"))
 except:
-    chzzk_df = spark.createDataFrame([],schema = common_schema)
+    chzzk_df = spark.createDataFrame([], schema=common_schema)
 
 try:
-    afreeca_source = datasource_df.select("stream_data.afreeca").select(explode("afreeca"))
-    afc_filtered_source = afreeca_source.filter(col("col.broad_info.broad.broad_grade") < 19)
+    afreeca_source = datasource_df.select("stream_data.afreeca").select(
+        explode("afreeca")
+    )
+    afc_filtered_source = afreeca_source.filter(
+        col("col.broad_info.broad.broad_grade") < 19
+    )
 
     afreeca_df = afc_filtered_source.select(
         col("col.streamer_id").alias("STREAMER_ID"),
@@ -89,7 +101,9 @@ result_df.printSchema()
 partitioned_df = result_df.repartition("PLATFORM")
 
 # 파티션된 Spark DataFrame을 DynamicFrame으로 변환
-partitioned_dynamic_frame = DynamicFrame.fromDF(partitioned_df, glueContext, "partitioned_dynamic_frame")
+partitioned_dynamic_frame = DynamicFrame.fromDF(
+    partitioned_df, glueContext, "partitioned_dynamic_frame"
+)
 
 
 # Parquet으로 변환하여 S3에 저장

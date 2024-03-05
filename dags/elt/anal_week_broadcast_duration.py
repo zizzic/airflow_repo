@@ -30,12 +30,14 @@ def elt():
                 DELETE FROM analytics.anal_week_broadcast_duration;
                 """
         cur.execute(sql)
-        print("Successfully deleted all data from analytics.anal_week_broadcast_duration")
+        print(
+            "Successfully deleted all data from analytics.anal_week_broadcast_duration"
+        )
 
         # SELECT 쿼리의 결과를 analytics.anal_week_game_viewer 테이블에 삽입
         sql = """
             INSERT INTO analytics.anal_week_broadcast_duration(GAME_NM, STREAMER_NM, BROADCAST_DURATION, CREATED_DATE)
-            select 
+            select
                 game_nm AS GAME_NM,
                 streamer_nm AS STREAMER_NM,
                 SUM(game_duration) AS BROADCAST_DURATION,
