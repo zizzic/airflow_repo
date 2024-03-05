@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
+from airflow.models import Variable
 
 # from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
-from airflow.sensors.time_delta_sensor import TimeDeltaSensor
 
 from jinja2 import Template
 
@@ -45,7 +46,7 @@ with DAG(
     tags=["glue", "streaming"],
     schedule_interval="0 * * * *",
     catchup=True,
-    max_active_runs=1
+    max_active_runs=1,
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
@@ -77,9 +78,25 @@ with DAG(
         run_id=run_glue_job.output,
         aws_conn_id="aws_conn_id",
     )
-    wait_30_seconds = TimeDeltaSensor(
-        task_id= 'wait_30_seconds',
-        delta=timedelta(seconds=30),
+
+    glue_crawler_arn = Variable.get("glue_crawler_arn_secret")
+    glue_crawler_config = {
+        "Name": "de-2-1-raw_live_viewer",
+        "Role": glue_crawler_arn,
+        "DatabaseName": "de_2_1_glue",
+        "Targets": {
+            "S3Targets": [
+                {
+                    "Path": "s3://de-2-1-bucket/source/parquet/table_name=raw_live_viewer/"
+                }
+            ]
+        },
+    }
+
+    crawl_s3 = GlueCrawlerOperator(
+        task_id="crawl_s3",
+        config=glue_crawler_config,
+        aws_conn_id="aws_conn_id",
     )
 
-run_glue_job >> wait_for_job >> wait_30_seconds
+run_glue_job >> wait_for_job >> crawl_s3
