@@ -84,8 +84,6 @@ def elt():
             LEFT JOIN external_raw_data.game_info AS g_info
             ON g_ids.n_game_code = g_info.chz_game_code OR LTRIM(g_ids.n_game_code, '0') = g_info.afc_game_code
             WHERE g_ids.broadcast_id IS NOT NULL
-                AND g_ids.parsed_time >= (CURRENT_DATE - INTERVAL '7 days' + INTERVAL '6 hours')
-                AND g_ids.parsed_time < (CURRENT_DATE + INTERVAL '6 hours')
             GROUP BY STREAMER_NM, BROADCAST_ID, GAME_NM, PLATFORM, g_ids.group_id, g_ids.n_game_code
             ORDER BY STREAMER_NM, BROADCAST_ID, start_time;
             """
