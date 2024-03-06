@@ -16,7 +16,7 @@ def connect_to_redshift():
 
 @task
 def elt():
-    # 1. GCE의 RDS의 GAME_INFO 테이블에서 게임 리스트 가져오기
+    # # Redshift에 연결
     cur = connect_to_redshift()
     print("Successfully connected to Redshift")
     conn = cur.connection

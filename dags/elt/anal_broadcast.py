@@ -34,7 +34,7 @@ def elt():
 
         # SELECT 쿼리의 결과를 analytics.ANAL_YSD_GAME_CCU 테이블에 삽입
         sql = """
-            INSERT INTO analytics.ANAL_BROADCAST(STREAMER_NM, BROADCAST_ID, GAME_NM, PLATFORM, AVG_VIEWER_NUM, BROADCAST_START_TIME, BROADCAST_END_TIME, GAME_DURATION, CREATED_DATE)
+            INSERT INTO analytics.ANAL_BROADCAST(STREAMER_NM, BROADCAST_ID, GAME_NM, PLATFORM, BROADCAST_TITLE, MAX_VIEWER_NUM, AVG_VIEWER_NUM, BROADCAST_START_TIME, BROADCAST_END_TIME, GAME_DURATION, CREATED_DATE)
             WITH ParsedData AS (
                 SELECT *, live_collect_time::TIMESTAMPTZ AS parsed_time
                 FROM external_raw_data.table_name_raw_live_viewer
@@ -72,6 +72,8 @@ def elt():
                 g_ids.broadcast_id AS BROADCAST_ID,
                 COALESCE(g_info.game_nm,g_ids.n_game_code) AS GAME_NM,
                 g_ids.platform AS PLATFORM,
+                MIN(g_ids.broadcast_title) AS BROADCAST_TITLE,
+                MAX(g_ids.viewer_num)::integer AS MAX_VIEWER_NUM,
                 AVG(g_ids.viewer_num)::integer AS AVG_VIEWER_NUM,
                 MIN(g_ids.parsed_time) AS start_time,
                 MAX(g_ids.parsed_time) AS end_time,
