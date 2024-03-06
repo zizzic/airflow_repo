@@ -48,11 +48,9 @@ def get_s_list(**kwargs):
 def chzzk_raw(current_time, **kwargs):
     chzzk_ids = kwargs["ti"].xcom_pull(key="chzzk", task_ids="get_s_list_task")
     live_stream_data = []
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
     for s_id, id in chzzk_ids:
-        res = requests.get(f"https://api.chzzk.naver.com/service/v1/channels/{id}",headers=headers)
+        res = requests.get(f"https://api.chzzk.naver.com/service/v1/channels/{id}")
 
         if res.status_code == 200:
             live_data = res.json()
