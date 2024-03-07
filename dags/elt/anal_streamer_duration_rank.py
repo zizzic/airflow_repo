@@ -51,7 +51,7 @@ def elt():
                 gi.game_banner_url,
                 current_date AS CREATED_TIME
             FROM DURATION_RANK_TABLE rg
-                INNER JOIN external_raw_data.game_info gi 
+                LEFT JOIN external_raw_data.game_info gi 
                 ON rg.game_nm=gi.game_nm
             WHERE rg.DURATION_RANK < 4;
             """
