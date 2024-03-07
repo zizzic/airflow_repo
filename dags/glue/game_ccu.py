@@ -7,8 +7,10 @@ from airflow.models import Variable
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-
 from airflow.providers.amazon.aws.sensors.glue import GlueJobSensor
+
+from airflow.operators.dagrun_operator import TriggerDagRunOperator
+
 from jinja2 import Template
 
 
@@ -46,7 +48,7 @@ with DAG(
     max_active_runs=1,
     schedule="5 * * * *",
     tags=["glue", "Game_CCU"],
-    catchup=True,
+    catchup=True, #check
 ) as dag:
 
     bucket_name = "de-2-1-bucket"
@@ -94,5 +96,10 @@ with DAG(
         config=glue_crawler_config,
         aws_conn_id="aws_conn_id",
     )
+
+    trigger_dag = TriggerDagRunOperator(
+        task_id='trigger_dag',
+        trigger_dag_id='raw_data_game_CCU_I',  # 여기에 트리거하려는 DAG의 ID를 입력하세요.
+    )
 # upload_script >> run_glue_job >> wait_for_job
-run_glue_job >> wait_for_job >> crawl_s3
+run_glue_job >> wait_for_job >> crawl_s3 >> trigger_dag
