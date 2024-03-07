@@ -47,6 +47,7 @@ def elt():
                 current_date AS CREATED_TIME
             FROM analytics.anal_broadcast
                 WHERE game_nm NOT IN ('talk', '-', 'Virtual', '종합 게임')
+                    AND game_duration != 0
             GROUP BY 1, 2;
             """
         cur.execute(sql)
