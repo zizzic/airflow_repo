@@ -63,7 +63,7 @@ def elt():
                 SELECT
                     s_info.streamer_nm AS streamer_nm,
                     g_ids.broadcast_id AS BROADCAST_ID,
-                    MIN(g_info.game_nm) AS game_nm,
+                    COALESCE(g_info.game_nm,g_ids.n_game_code) AS game_nm,
                     g_ids.platform,
                     MIN(g_ids.broadcast_title) AS broadcast_title,
                     MAX(g_ids.viewer_num)::integer AS max_viewer_num,
