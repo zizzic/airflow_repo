@@ -71,7 +71,7 @@ def elt():
                     MIN(g_ids.parsed_time) AS broadcast_start_time,
                     MAX(g_ids.parsed_time) AS broadcast_end_time,
                     (EXTRACT(EPOCH FROM MAX(g_ids.parsed_time)) - EXTRACT(EPOCH FROM MIN(g_ids.parsed_time))) / 60 AS game_duration,
-                    CURRENT_DATE AS created_date
+                    (GETDATE() AT TIME ZONE 'Asia/Seoul')::date AS created_date
                 FROM 
                     GroupIDs AS g_ids
                 LEFT JOIN 
