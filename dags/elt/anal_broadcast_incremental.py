@@ -81,9 +81,9 @@ def elt():
                 WHERE 
                     g_ids.broadcast_id IS NOT NULL
                 AND
-                    g_ids.parsed_time > CURRENT_DATE - INTERVAL '1 day' + INTERVAL '6 hours'
+                    g_ids.parsed_time > (GETDATE() AT TIME ZONE 'Asia/Seoul')::date - INTERVAL '1 day' + INTERVAL '6 hours'
                 AND
-                    g_ids.parsed_time < CURRENT_DATE + INTERVAL '6 hours'
+                    g_ids.parsed_time < (GETDATE() AT TIME ZONE 'Asia/Seoul')::date + INTERVAL '6 hours'
                 GROUP BY 
                     streamer_nm, broadcast_id, game_nm, platform;
         """
