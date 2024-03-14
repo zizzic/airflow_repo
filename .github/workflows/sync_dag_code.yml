@@ -1,0 +1,94 @@
+name: CI/CD Workflow
+
+on:
+    push:
+        branches: develop
+    pull_request:
+        branches: develop
+
+permissions:
+    contents: read
+    pull-requests: read
+
+jobs:
+    path-filter:
+        runs-on: ubuntu-latest
+        outputs:
+            dags-changed: ${{ steps.filter.outputs.dags }}
+            docker-changed: ${{ steps.filter.outputs.docker }}
+            plugin-created: ${{ steps.filter.outputs.plugin}}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Path Filter
+              id: filter
+              uses: dorny/paths-filter@v3
+              with:
+                  filters: |
+                      dags:
+                        - 'dags/**/*.py'
+                        - 'tests/dags/**/*.py' 
+                      docker:
+                        - 'docker-compose.yaml'
+                        - 'Dockerfile'
+                      plugin:
+                        - 'plugins/***'
+
+    build:
+        needs: path-filter
+        if: (needs.path-filter.outputs.dags-changed == 'true'|| needs.path-filter.outputs.plugin-created == 'true') && github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Set Environment Variables
+              run: |
+                  echo "PYTHON_VERSION=3.11" >> $GITHUB_ENV
+                  echo "AIRFLOW_VERSION=2.7.2" >> $GITHUB_ENV
+
+            - name: Install dependencies
+              run: |
+                  CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+                  echo "Installing Apache Airflow version ${AIRFLOW_VERSION} with constraints from ${CONSTRAINT_URL}"
+                  pip install "apache-airflow[amazon,mysql]==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+                  pip install pytest
+
+            - name: Install Pylint
+              run: pip install pylint
+            - name: Run Pylint
+              env:
+                  PYTHONPATH: plugins
+              run: pylint --output-format=colorized --disable=missing-docstring,invalid-name,W,C0301,C0411 $(find dags/ tests/dags/ plugins/ -name "*.py") || true
+            - name: Test DAG integrity
+              run: pytest tests/
+
+    deploy:
+        needs: path-filter
+        if: github.event_name == 'push'
+        runs-on: self-hosted
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Extract repository name
+              run: echo "REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)" >> $GITHUB_ENV
+
+            - name: Sync specific files
+              env:
+                  DEPLOY_DIRECTORY: /home/zizzicteam2/${{ env.REPO_NAME }}
+              run: |
+                  rsync -av --include='dags/***' --include='plugins/***' --include='docker-compose.yaml' --include='Dockerfile' --exclude='*' ./ $DEPLOY_DIRECTORY
+            - name: Restart Docker Services
+              if: ${{ needs.path-filter.outputs.docker-changed == 'true' || needs.path-filter.outputs.plugin-created == 'true'}}
+              env:
+                  DEPLOY_DIRECTORY: /home/zizzicteam2/${{ env.REPO_NAME }}
+              run: |
+                  cd $DEPLOY_DIRECTORY
+
+                  docker compose down
+                  docker compose up -d
