@@ -20,6 +20,7 @@
 | 프로세싱 (Data Processing) | Airflow, AWS Glue(Spark), AWS Athena, AWS Lambda |
 | 시각화 (Visualization) | Grafana(dashboard service) |
 | 협업 도구 (Collaborative Software) | GitHub, Notion, Slack |
+
 ![architecture](/img/architecture.png)
 
 ## 프로젝트 보고서
