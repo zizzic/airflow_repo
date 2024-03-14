@@ -14,12 +14,12 @@
 ## 활용 기술 및 프레임 워크
 | 분류 | 기술 |
 | --- | --- |
-| 사용 언어 (Programming Language) | Python, SQL |
-| 클라우드 서비스 (Cloud Service) | GCP, AWS (Terraform) |
-| 데이터 베이스 (Database) | AWS S3, AWS Redshift, AWS RDS(MySQL) |
-| 프로세싱 (Data Processing) | Airflow, AWS Glue(Spark), AWS Athena, AWS Lambda |
-| 시각화 (Visualization) | Grafana(dashboard service) |
-| 협업 도구 (Collaborative Software) | GitHub, Notion, Slack |
+| 사용 언어 (Programming Language) | ![Python](/img/python-3.11.svg) ![SQL](/img/MySQL.svg) |
+| 클라우드 서비스 (Cloud Service) | ![GCP](/img/GCP.svg) ![AWS](/img/AWS.svg) ![Terraform](/img/Terraform.svg) |
+| 데이터 베이스 (Database) | ![AWS S3](/img/Amazon%20S3.svg) ![AWS Redshift](/img/Amazon%20Redshift.svg) ![AWS RDS(MySQL)](/img/Amazon%20RDS.svg)| 
+| 프로세싱 (Data Processing) | ![Airflow](/img/Apache%20Airflow.svg) ![Spark](/img/Apache%20Spark.svg) ![AWS Glue](/img/Amazon%20Glue.svg) ![AWS Athena](/img/Amazon%20Athena.svg) ![AWS Lambda](/img/AWS%20Lambda.svg) |
+| 시각화 (Visualization) | ![Grafana](/img/grafana.svg)|
+| 협업 도구 (Collaborative Software) | ![GitHub](/img/github.svg) ![Notion](/img/Notion.svg) ![Slack](/img/Slack.svg) |
 
 ![architecture](/img/architecture.png)
 
